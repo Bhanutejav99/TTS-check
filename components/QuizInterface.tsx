@@ -66,7 +66,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       // Prefetch Answer
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
-      prefetchTTS(`The correct answer is ${correctLetter}, ${correctText}.`);
+      prefetchTTS(`Answer is option ${correctLetter}, ${correctText}.`);
 
       // Prefetch Next Question
       if (currentIndex < questions.length - 1) {
@@ -86,7 +86,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
-      const textToSpeak = `The correct answer is ${correctLetter}, ${correctText}.`;
+      const textToSpeak = `Answer is option ${correctLetter}, ${correctText}.`;
       
       const triggerTTS = async () => {
         // Small delay to let the "Success/Error" sound play first if enabled
@@ -205,7 +205,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
        hasReadAnswerRef.current = currentIndex;
        const correctLetter = currentQuestion.correctAnswer;
        const correctText = currentQuestion[`option${correctLetter}`];
-       const textToSpeak = `The correct answer is ${correctLetter}, ${correctText}.`;
+       const textToSpeak = `Answer is option ${correctLetter}, ${correctText}.`;
        
        speakText(textToSpeak).then(audioData => {
          if (audioData) SoundEngine.playBase64Audio(audioData);
