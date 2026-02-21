@@ -142,13 +142,24 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const handleStart = async () => {
     if (enableSound || enableTTS) SoundEngine.init();
 
+    // Eagerly prefetch first question TTS so it's cached and plays instantly
+    if (enableTTS) {
+      const firstQ = questions[0];
+      const questionText = `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+      const correctLetter = firstQ.correctAnswer;
+      const correctText = firstQ[`option${correctLetter}`];
+      // Fire both prefetches in parallel — don't await, let them run in background
+      prefetchTTS(questionText);
+      prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+    }
+
     if (recordSession) {
       const recorder = await setupRecording();
       if (recorder) {
         setIsInitializing(true);
 
         // --- WORLD CLASS START SEQUENCE ---
-        // 1. Stabilize (4s)
+        // 1. Stabilize (4s) — TTS prefetch runs during this wait
         await wait(4000);
 
         // 2. Reveal UI
