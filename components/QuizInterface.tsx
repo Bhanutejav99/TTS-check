@@ -51,6 +51,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const hasReadAnswerRef = useRef<number | null>(null);
   const autoTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  // Use a ref for isAutoSelecting so cleanup closures always see the latest value
+  const isAutoSelectingRef = useRef(false);
 
   const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS } = config;
   const currentQuestion = questions[currentIndex];
@@ -76,7 +78,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
   // TTS Question Effect
   useEffect(() => {
-    if (enableTTS && isQuizActive && !isAutoSelecting) {
+    if (enableTTS && isQuizActive && !isAutoSelectingRef.current) {
       const textToSpeak = `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
@@ -101,14 +103,15 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     }
 
     return () => {
-      // Don't stop TTS during answer reveal — let the voice finish speaking
-      if (!isAutoSelecting) SoundEngine.stopTTS();
+      // ONLY stop TTS when navigating manually — never during answer reveal
+      if (!isAutoSelectingRef.current) SoundEngine.stopTTS();
     };
-  }, [currentIndex, isQuizActive, enableTTS, isAutoSelecting, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD]);
+  }, [currentIndex, isQuizActive, enableTTS, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD]);
 
   // TTS Answer Effect
+  // Answer TTS — ONLY for manual option selection (user clicked), NOT auto-reveal
   useEffect(() => {
-    if (enableTTS && isQuizActive && selectedOption && hasReadAnswerRef.current !== currentIndex) {
+    if (enableTTS && isQuizActive && selectedOption && !isAutoSelectingRef.current && hasReadAnswerRef.current !== currentIndex) {
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
@@ -146,6 +149,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       autoTransitionRef.current = null;
     }
     setIsAutoSelecting(false);
+    isAutoSelectingRef.current = false;
 
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(prev => prev + 1);
@@ -155,13 +159,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   }, [currentIndex, questions.length, onFinish, prepareFinalAnswers]);
 
   const handleOptionSelect = useCallback((key: 'A' | 'B' | 'C' | 'D') => {
-    if (!isAutoSelecting) SoundEngine.stopTTS(); // Only stop TTS on manual select, not auto-reveal
+    if (!isAutoSelectingRef.current) SoundEngine.stopTTS(); // Only stop TTS on manual select
     if (enableSound) {
       if (key === currentQuestion.correctAnswer) SoundEngine.playSuccess();
       else SoundEngine.playError();
     }
     setUserChoices(prev => ({ ...prev, [currentIndex]: key }));
-  }, [currentIndex, currentQuestion.correctAnswer, enableSound, isAutoSelecting]);
+  }, [currentIndex, currentQuestion.correctAnswer, enableSound]);
 
   const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -222,10 +226,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (isAutomatic) {
       if (enableSound) SoundEngine.playError();
       setIsAutoSelecting(true);
-      // Directly set the correct answer without stopping TTS
+      isAutoSelectingRef.current = true;
+      // Set correct answer — shows green
       setUserChoices(prev => ({ ...prev, [currentIndex]: currentQuestion.correctAnswer }));
-      // Give 4 seconds for the TTS answer to finish playing before transitioning
-      autoTransitionRef.current = setTimeout(() => handleNext(), 4000);
+      // Give 5 seconds for the TTS answer to fully complete before transitioning
+      // The answer TTS was already triggered by handleTick and won't be stopped
+      // because isAutoSelectingRef.current = true prevents cleanup from calling stopTTS
+      autoTransitionRef.current = setTimeout(() => handleNext(), 5000);
     } else if (isTimed) {
       handleNext();
     }
