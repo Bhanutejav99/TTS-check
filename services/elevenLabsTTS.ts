@@ -2,7 +2,7 @@
 const ttsCache = new Map<string, string>();
 
 // ElevenLabs config — Niladri Mahapatra, Eleven v3, stability ~75%
-const VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // fallback to default
+const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri Mahapatra - Informative Teacher
 const MODEL_ID = 'eleven_v3';
 const STABILITY = 0.75;
 const SIMILARITY_BOOST = 0.75;
