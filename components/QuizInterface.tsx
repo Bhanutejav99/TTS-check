@@ -101,7 +101,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     }
 
     return () => {
-      SoundEngine.stopTTS();
+      // Don't stop TTS during answer reveal — let the voice finish speaking
+      if (!isAutoSelecting) SoundEngine.stopTTS();
     };
   }, [currentIndex, isQuizActive, enableTTS, isAutoSelecting, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD]);
 
