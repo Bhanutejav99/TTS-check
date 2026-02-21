@@ -129,13 +129,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   }, [currentIndex, questions.length, onFinish, prepareFinalAnswers]);
 
   const handleOptionSelect = useCallback((key: 'A' | 'B' | 'C' | 'D') => {
-    SoundEngine.stopTTS();
+    if (!isAutoSelecting) SoundEngine.stopTTS(); // Only stop TTS on manual select, not auto-reveal
     if (enableSound) {
       if (key === currentQuestion.correctAnswer) SoundEngine.playSuccess();
       else SoundEngine.playError();
     }
     setUserChoices(prev => ({ ...prev, [currentIndex]: key }));
-  }, [currentIndex, currentQuestion.correctAnswer, enableSound]);
+  }, [currentIndex, currentQuestion.correctAnswer, enableSound, isAutoSelecting]);
 
   const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -196,8 +196,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (isAutomatic) {
       if (enableSound) SoundEngine.playError();
       setIsAutoSelecting(true);
-      handleOptionSelect(currentQuestion.correctAnswer);
-      autoTransitionRef.current = setTimeout(() => handleNext(), 3000);
+      // Directly set the correct answer without stopping TTS
+      setUserChoices(prev => ({ ...prev, [currentIndex]: currentQuestion.correctAnswer }));
+      // Give 4 seconds for the TTS answer to finish playing before transitioning
+      autoTransitionRef.current = setTimeout(() => handleNext(), 4000);
     } else if (isTimed) {
       handleNext();
     }
