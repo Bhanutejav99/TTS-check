@@ -4,7 +4,7 @@ import { Question, UserAnswer, QuizConfig } from '../types.ts';
 import CircularTimer from './CircularTimer.tsx';
 import { SoundEngine } from '../utils/SoundEngine.ts';
 import { useScreenRecorder } from '../hooks/useScreenRecorder.ts';
-import { speakText } from '../services/geminiTTS.ts';
+import { speakText, prefetchTTS } from '../services/geminiTTS.ts';
 
 interface QuizInterfaceProps {
   questions: Question[];
@@ -23,6 +23,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const [isInitializing, setIsInitializing] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false); 
   
+  const hasReadAnswerRef = useRef<number | null>(null);
   const autoTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -43,7 +44,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     };
   }, [enableSound]);
 
-  // TTS Effect
+  // Reset answer read ref on question change
+  useEffect(() => {
+    hasReadAnswerRef.current = null;
+  }, [currentIndex]);
+
+  // TTS Question Effect
   useEffect(() => {
     if (enableTTS && isQuizActive && !isAutoSelecting) {
       const textToSpeak = `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
@@ -56,8 +62,44 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       };
 
       triggerTTS();
+
+      // Prefetch Answer
+      const correctLetter = currentQuestion.correctAnswer;
+      const correctText = currentQuestion[`option${correctLetter}`];
+      prefetchTTS(`The correct answer is ${correctLetter}, ${correctText}.`);
+
+      // Prefetch Next Question
+      if (currentIndex < questions.length - 1) {
+        const nextQ = questions[currentIndex + 1];
+        prefetchTTS(`${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`);
+      }
     }
-  }, [currentIndex, isQuizActive, enableTTS, isAutoSelecting, currentQuestion]);
+
+    return () => {
+      SoundEngine.stopTTS();
+    };
+  }, [currentIndex, isQuizActive, enableTTS, isAutoSelecting, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD]);
+
+  // TTS Answer Effect
+  useEffect(() => {
+    if (enableTTS && isQuizActive && selectedOption && hasReadAnswerRef.current !== currentIndex) {
+      hasReadAnswerRef.current = currentIndex;
+      const correctLetter = currentQuestion.correctAnswer;
+      const correctText = currentQuestion[`option${correctLetter}`];
+      const textToSpeak = `The correct answer is ${correctLetter}, ${correctText}.`;
+      
+      const triggerTTS = async () => {
+        // Small delay to let the "Success/Error" sound play first if enabled
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const audioData = await speakText(textToSpeak);
+        if (audioData) {
+          SoundEngine.playBase64Audio(audioData);
+        }
+      };
+
+      triggerTTS();
+    }
+  }, [selectedOption, enableTTS, isQuizActive, currentQuestion, currentIndex]);
 
   const prepareFinalAnswers = useCallback(() => {
     if (recordSession) stopRecording();
@@ -151,9 +193,24 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   };
 
   const handleTick = (remainingTime: number) => {
-    if (!enableSound || !isQuizActive || isAutoSelecting) return;
-    if (remainingTime > 0 && remainingTime <= 5) SoundEngine.playUrgentTick();
-    else if (remainingTime === 10) SoundEngine.playTick();
+    if (!isQuizActive || isAutoSelecting) return;
+    
+    if (enableSound) {
+      if (remainingTime > 0 && remainingTime <= 5) SoundEngine.playUrgentTick();
+      else if (remainingTime === 10) SoundEngine.playTick();
+    }
+
+    // Trigger Answer Readout at 2 seconds remaining if not already read
+    if (enableTTS && remainingTime <= 2 && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
+       hasReadAnswerRef.current = currentIndex;
+       const correctLetter = currentQuestion.correctAnswer;
+       const correctText = currentQuestion[`option${correctLetter}`];
+       const textToSpeak = `The correct answer is ${correctLetter}, ${correctText}.`;
+       
+       speakText(textToSpeak).then(audioData => {
+         if (audioData) SoundEngine.playBase64Audio(audioData);
+       });
+    }
   };
 
   const timerDuration = isAutomatic ? (autoTimeLimit - 3) : (currentQuestion.timeLimit || 20);

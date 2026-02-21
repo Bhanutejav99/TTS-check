@@ -89,7 +89,27 @@ export const SoundEngine = {
       }
 
       console.log("SoundEngine: Decoding audio data, length:", len);
-      const audioBuffer = await SoundEngine.ctx.decodeAudioData(bytes.buffer);
+      let audioBuffer: AudioBuffer;
+      
+      // Create a copy of the buffer because decodeAudioData detaches the input buffer
+      const bufferForDecoding = bytes.buffer.slice(0);
+      
+      try {
+        audioBuffer = await SoundEngine.ctx.decodeAudioData(bufferForDecoding);
+        console.log("SoundEngine: decodeAudioData success");
+      } catch (decodeError) {
+        console.warn("SoundEngine: decodeAudioData failed, attempting raw PCM 24kHz fallback", decodeError);
+        // Fallback: Assume 24kHz Mono 16-bit Little-Endian PCM
+        // bytes.buffer is still valid because we passed a slice to decodeAudioData
+        const pcmData = new Int16Array(bytes.buffer);
+        audioBuffer = SoundEngine.ctx.createBuffer(1, pcmData.length, 24000);
+        const channelData = audioBuffer.getChannelData(0);
+        for (let i = 0; i < pcmData.length; i++) {
+          channelData[i] = pcmData[i] / 32768.0;
+        }
+        console.log("SoundEngine: Raw PCM fallback success");
+      }
+
       const source = SoundEngine.ctx.createBufferSource();
       source.buffer = audioBuffer;
 
