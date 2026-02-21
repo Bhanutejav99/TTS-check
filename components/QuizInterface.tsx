@@ -16,14 +16,23 @@ interface QuizInterfaceProps {
 // Estimate timer duration based on question + options word count and TTS speaking rate
 const TTS_WORDS_PER_SECOND = 2.5;
 const THINKING_GAP = 3;      // seconds of silence between question readout and answer
-const ANSWER_READ_TIME = 2.5; // seconds for "answer is option X [text]"
 const MIN_TIMER = 10;         // minimum timer in seconds
+const MIN_ANSWER_TIME = 3;    // minimum seconds to allow for answer readout
+
+// Calculate how long the answer phrase will take to speak
+const getAnswerReadTime = (q: Question): number => {
+  const correctText = q[`option${q.correctAnswer}`];
+  const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
+  const wordCount = answerPhrase.trim().split(/\s+/).length;
+  return Math.max(MIN_ANSWER_TIME, Math.ceil(wordCount / TTS_WORDS_PER_SECOND) + 1); // +1s buffer for API latency
+};
 
 const calculateDynamicTimer = (q: Question): number => {
   const fullText = `${q.question} ${q.optionA} ${q.optionB} ${q.optionC} ${q.optionD}`;
   const wordCount = fullText.trim().split(/\s+/).length;
   const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
-  const total = questionReadTime + THINKING_GAP + ANSWER_READ_TIME;
+  const answerReadTime = getAnswerReadTime(q);
+  const total = questionReadTime + THINKING_GAP + answerReadTime;
   return Math.max(MIN_TIMER, Math.ceil(total));
 };
 
@@ -227,8 +236,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       else if (remainingTime === 10) SoundEngine.playTick();
     }
 
-    // Trigger Answer Readout at 2.5 seconds remaining so voice finishes as answer reveals
-    if (enableTTS && remainingTime <= 2.5 && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
+    // Trigger Answer Readout based on dynamic answer length so full text is spoken
+    const answerTime = getAnswerReadTime(currentQuestion);
+    if (enableTTS && remainingTime <= answerTime && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
