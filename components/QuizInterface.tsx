@@ -24,7 +24,7 @@ const getAnswerReadTime = (q: Question): number => {
   const correctText = q[`option${q.correctAnswer}`];
   const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
   const wordCount = answerPhrase.trim().split(/\s+/).length;
-  return Math.max(MIN_ANSWER_TIME, Math.ceil(wordCount / TTS_WORDS_PER_SECOND) + 1); // +1s buffer for API latency
+  return Math.max(MIN_ANSWER_TIME, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // no buffer needed — audio is prefetched
 };
 
 const calculateDynamicTimer = (q: Question): number => {
