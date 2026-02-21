@@ -14,7 +14,7 @@ interface QuizInterfaceProps {
 }
 
 // Estimate timer duration based on question + options word count and TTS speaking rate
-const TTS_WORDS_PER_SECOND = 2.5;
+const TTS_WORDS_PER_SECOND = 2.0; // Gemini natural voice is slower than typical TTS
 const THINKING_GAP = 3;      // seconds of silence between question readout and answer
 const MIN_TIMER = 10;         // minimum timer in seconds
 const MIN_ANSWER_TIME = 3;    // minimum seconds to allow for answer readout
@@ -28,13 +28,15 @@ const getAnswerReadTime = (q: Question): number => {
 };
 
 const calculateDynamicTimer = (q: Question): number => {
-  const fullText = `${q.question} ${q.optionA} ${q.optionB} ${q.optionC} ${q.optionD}`;
-  const wordCount = fullText.trim().split(/\s+/).length;
+  // Use the ACTUAL TTS text for accurate word count (includes "Options are: A, B, C, D" filler words)
+  const fullTTSText = `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
+  const wordCount = fullTTSText.trim().split(/\s+/).length;
   const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
   const answerReadTime = getAnswerReadTime(q);
   const total = questionReadTime + THINKING_GAP + answerReadTime;
   return Math.max(MIN_TIMER, Math.ceil(total));
 };
+
 
 const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFinish, onExit }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
