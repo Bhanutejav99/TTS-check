@@ -200,8 +200,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       else if (remainingTime === 10) SoundEngine.playTick();
     }
 
-    // Trigger Answer Readout at 2 seconds remaining if not already read
-    if (enableTTS && remainingTime <= 2 && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
+    // Trigger Answer Readout at 4 seconds remaining so full audio plays before answer reveals
+    if (enableTTS && remainingTime <= 4 && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
