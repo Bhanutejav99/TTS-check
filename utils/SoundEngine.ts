@@ -5,15 +5,24 @@ export const SoundEngine = {
   currentTTSSource: null as AudioBufferSourceNode | null,
 
   init: () => {
-    if (!SoundEngine.ctx) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      SoundEngine.ctx = new AudioContextClass();
-      // Create a dedicated destination for the MediaRecorder (internal audio capture)
-      SoundEngine.dest = SoundEngine.ctx.createMediaStreamDestination();
-    }
-    // Auto-resume context if it gets suspended by browser policies
-    if (SoundEngine.ctx.state === 'suspended') {
-      SoundEngine.ctx.resume().catch(e => console.warn("Audio resume failed", e));
+    try {
+      if (!SoundEngine.ctx) {
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        if (!AudioContextClass) {
+          console.error("AudioContext not supported in this browser");
+          return;
+        }
+        SoundEngine.ctx = new AudioContextClass();
+        SoundEngine.dest = SoundEngine.ctx.createMediaStreamDestination();
+        console.log("SoundEngine: AudioContext initialized", SoundEngine.ctx.state);
+      }
+      if (SoundEngine.ctx.state === 'suspended') {
+        SoundEngine.ctx.resume().then(() => {
+          console.log("SoundEngine: AudioContext resumed");
+        }).catch(e => console.warn("SoundEngine: Audio resume failed", e));
+      }
+    } catch (e) {
+      console.error("SoundEngine: Initialization failed", e);
     }
   },
 
@@ -60,18 +69,26 @@ export const SoundEngine = {
 
   playBase64Audio: async (base64Data: string) => {
     if (!SoundEngine.ctx) SoundEngine.init();
-    if (!SoundEngine.ctx) return;
+    if (!SoundEngine.ctx) {
+      console.error("SoundEngine: Cannot play audio, context not initialized");
+      return;
+    }
+
+    if (SoundEngine.ctx.state === 'suspended') {
+      await SoundEngine.ctx.resume();
+    }
 
     SoundEngine.stopTTS();
 
     try {
-      const binaryString = window.atob(base64Data);
+      const binaryString = window.atob(base64Data.trim());
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
+      console.log("SoundEngine: Decoding audio data, length:", len);
       const audioBuffer = await SoundEngine.ctx.decodeAudioData(bytes.buffer);
       const source = SoundEngine.ctx.createBufferSource();
       source.buffer = audioBuffer;
@@ -88,14 +105,16 @@ export const SoundEngine = {
 
       source.start(0);
       SoundEngine.currentTTSSource = source;
+      console.log("SoundEngine: TTS playback started");
       
       source.onended = () => {
         if (SoundEngine.currentTTSSource === source) {
           SoundEngine.currentTTSSource = null;
+          console.log("SoundEngine: TTS playback ended");
         }
       };
     } catch (e) {
-      console.error("Error playing base64 audio", e);
+      console.error("SoundEngine: Error playing base64 audio", e);
     }
   },
 

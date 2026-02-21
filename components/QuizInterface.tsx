@@ -98,7 +98,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const handleStart = async () => {
-    if (enableSound) SoundEngine.init();
+    if (enableSound || enableTTS) SoundEngine.init();
     
     if (recordSession) {
         const recorder = await setupRecording();
