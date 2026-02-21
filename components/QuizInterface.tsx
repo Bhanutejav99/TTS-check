@@ -4,7 +4,7 @@ import { Question, UserAnswer, QuizConfig } from '../types.ts';
 import CircularTimer from './CircularTimer.tsx';
 import { SoundEngine } from '../utils/SoundEngine.ts';
 import { useScreenRecorder } from '../hooks/useScreenRecorder.ts';
-import { speakText, prefetchTTS } from '../services/geminiTTS.ts';
+import { speakText, prefetchTTS } from '../services/elevenLabsTTS.ts';
 
 interface QuizInterfaceProps {
   questions: Question[];
