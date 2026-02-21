@@ -13,6 +13,20 @@ interface QuizInterfaceProps {
   onExit: () => void;
 }
 
+// Estimate timer duration based on question + options word count and TTS speaking rate
+const TTS_WORDS_PER_SECOND = 2.5;
+const THINKING_GAP = 3;      // seconds of silence between question readout and answer
+const ANSWER_READ_TIME = 2.5; // seconds for "answer is option X [text]"
+const MIN_TIMER = 10;         // minimum timer in seconds
+
+const calculateDynamicTimer = (q: Question): number => {
+  const fullText = `${q.question} ${q.optionA} ${q.optionB} ${q.optionC} ${q.optionD}`;
+  const wordCount = fullText.trim().split(/\s+/).length;
+  const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
+  const total = questionReadTime + THINKING_GAP + ANSWER_READ_TIME;
+  return Math.max(MIN_TIMER, Math.ceil(total));
+};
+
 const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFinish, onExit }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userChoices, setUserChoices] = useState<Record<number, 'A' | 'B' | 'C' | 'D' | null>>({});
@@ -226,7 +240,11 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     }
   };
 
-  const timerDuration = isAutomatic ? (autoTimeLimit - 3) : (currentQuestion.timeLimit || 20);
+  const timerDuration = (enableTTS && isAutomatic)
+    ? calculateDynamicTimer(currentQuestion)
+    : isAutomatic
+      ? (autoTimeLimit - 3)
+      : (currentQuestion.timeLimit || 20);
   const progressPercent = ((currentIndex + 1) / questions.length) * 100;
 
   const themeStyles = {
