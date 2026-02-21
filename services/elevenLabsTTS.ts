@@ -24,12 +24,14 @@ export const speakText = async (text: string): Promise<string | null> => {
 
     try {
         const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+        console.log("ElevenLabs TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
         if (!apiKey) {
-            console.error("ElevenLabs TTS: VITE_ELEVENLABS_API_KEY missing from environment");
+            console.error("ElevenLabs TTS: VITE_ELEVENLABS_API_KEY missing from environment. Make sure it's set in Vercel and redeploy.");
             return null;
         }
 
-        console.log("ElevenLabs TTS: Generating speech for text:", text.substring(0, 50) + "...");
+        console.log("ElevenLabs TTS: Generating speech for:", text.substring(0, 60) + "...");
+        console.log("ElevenLabs TTS: Using voice:", VOICE_ID, "| model:", MODEL_ID);
 
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?optimize_streaming_latency=2&output_format=mp3_44100_128`, {
             method: 'POST',
