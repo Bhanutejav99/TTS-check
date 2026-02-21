@@ -10,15 +10,15 @@ export const speakText = async (text: string, voice: 'Puck' | 'Charon' | 'Kore' 
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("Gemini TTS: API Key missing from environment");
+      console.error("Gemini TTS: VITE_GEMINI_API_KEY missing from environment");
       return null;
     }
 
     const ai = new GoogleGenAI({ apiKey });
     console.log("Gemini TTS: Generating speech for text:", text.substring(0, 50) + "...");
-    
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text }] }],
