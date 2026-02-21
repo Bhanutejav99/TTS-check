@@ -4,8 +4,8 @@ const ttsCache = new Map<string, string>();
 // ElevenLabs config — Niladri Mahapatra, Eleven v3, stability ~75%
 const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri Mahapatra - Informative Teacher
 const MODEL_ID = 'eleven_v3';
-const STABILITY = 0.75;
-const SIMILARITY_BOOST = 0.75;
+const STABILITY = 1.0;        // eleven_v3 only accepts: 0.0 (Creative), 0.5 (Natural), 1.0 (Robust)
+const SIMILARITY_BOOST = 0.5;
 
 const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
     const bytes = new Uint8Array(buffer);
