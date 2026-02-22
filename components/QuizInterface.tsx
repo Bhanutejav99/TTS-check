@@ -311,16 +311,15 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden">
 
         {/* THE ARENA */}
-        <div className={`flex-grow flex flex-col items-center justify-center p-4 lg:p-6 transition-all duration-500 w-full relative`}>
+        <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 w-full relative bg-black`}>
 
-          {/* STABLE WRAPPER - FIXED 16:9 LANDSCAPE */}
+          {/* STABLE WRAPPER - FIXED 16:9 LANDSCAPE FULL SCREEN */}
           <div
             ref={cardRef}
-            className={`relative z-10 flex flex-col aspect-16-9 w-full h-auto max-w-[1600px]`}
-            style={{ maxHeight: 'calc(100vh - 140px)' }}
+            className={`relative z-10 flex flex-col aspect-video w-full h-full max-h-screen max-w-full`}
           >
-            {/* INNER ANIMATING CARD */}
-            <div className={`w-full h-full bg-[#04192c] rounded-[2rem] flex flex-col relative transition-all duration-700 overflow-hidden studio-shadow shadow-2xl border border-white/10
+            {/* INNER ANIMATING CARD - FLUSH FULL 16:9 */}
+            <div className={`w-full h-full bg-[#04192c] flex flex-col relative transition-all duration-700 overflow-hidden
                  ${!hasStarted ? 'opacity-80 scale-95' : 'opacity-100 scale-100'}`}
             >
 
@@ -350,10 +349,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               )}
 
               {/* Internal Content */}
-              <div className="flex flex-col h-full relative z-10 p-8 lg:p-14">
+              <div className="flex flex-col h-full relative z-10 px-6 py-8 lg:px-16 lg:py-10">
 
                 {/* Question Area */}
-                <div className={`flex-grow flex flex-col justify-center min-h-0 mb-8 lg:mb-12 transition-all ${currentQuestion.imageUrl ? 'gap-4 lg:gap-8' : ''}`}>
+                <div className={`flex-grow flex flex-col justify-center min-h-0 mb-6 lg:mb-8 transition-all ${currentQuestion.imageUrl ? 'gap-4 lg:gap-6' : ''}`}>
 
                   {currentQuestion.imageUrl && (
                     <div className="relative shrink-0 overflow-hidden rounded-2xl shadow-sm border border-white/20 bg-black/40 group h-64 aspect-video">
@@ -366,7 +365,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                     </div>
                   )}
 
-                  <div className="w-full max-h-full overflow-y-auto no-scrollbar py-16 flex flex-col justify-center">
+                  <div className="w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center">
                     <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
                       <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
                     </h2>
