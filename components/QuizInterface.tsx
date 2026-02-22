@@ -22,13 +22,13 @@ const MIN_TIMER = 10;         // minimum timer in seconds
 // Calculate how long the answer phrase will take to speak
 const getAnswerReadTime = (q: Question): number => {
   const correctText = q[`option${q.correctAnswer}`];
-  const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
+  const answerPhrase = `${q.correctAnswer} ${correctText}`;
   const wordCount = answerPhrase.trim().split(/\s+/).length;
   return Math.max(1, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // pure read time
 };
 
 const calculateDynamicTimer = (q: Question): number => {
-  const fullTTSText = `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
+  const fullTTSText = `${q.question}... A ${q.optionA}. B ${q.optionB}. C ${q.optionC}. D ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
   const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
   const answerReadTime = getAnswerReadTime(q);
@@ -78,7 +78,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // TTS Question Effect
   useEffect(() => {
     if (enableTTS && isQuizActive && !isAutoSelectingRef.current) {
-      const textToSpeak = `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
+      const textToSpeak = `${currentQuestion.question}... A ${currentQuestion.optionA}. B ${currentQuestion.optionB}. C ${currentQuestion.optionC}. D ${currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
         const audioData = await speakText(textToSpeak);
@@ -92,12 +92,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       // Prefetch Answer
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
-      prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+      prefetchTTS(`${correctLetter} ${correctText}`);
 
       // Prefetch Next Question
       if (currentIndex < questions.length - 1) {
         const nextQ = questions[currentIndex + 1];
-        prefetchTTS(`${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`);
+        prefetchTTS(`${nextQ.question}... A ${nextQ.optionA}. B ${nextQ.optionB}. C ${nextQ.optionC}. D ${nextQ.optionD}.`);
       }
     }
 
@@ -114,7 +114,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
       const correctText = currentQuestion[`option${correctLetter}`];
-      const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
+      const textToSpeak = `${correctLetter} ${correctText}`;
 
       const triggerTTS = async () => {
         // Small delay to let the "Success/Error" sound play first if enabled
@@ -174,12 +174,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     // Eagerly prefetch first question TTS so it's cached and plays instantly
     if (enableTTS) {
       const firstQ = questions[0];
-      const questionText = `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+      const questionText = `${firstQ.question}... A ${firstQ.optionA}. B ${firstQ.optionB}. C ${firstQ.optionC}. D ${firstQ.optionD}.`;
       const correctLetter = firstQ.correctAnswer;
       const correctText = firstQ[`option${correctLetter}`];
       // Fire both prefetches in parallel — don't await, let them run in background
       prefetchTTS(questionText);
-      prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+      prefetchTTS(`${correctLetter} ${correctText}`);
     }
 
     if (recordSession) {
@@ -261,7 +261,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         if (enableTTS) {
           const correctLetter = currentQuestion.correctAnswer;
           const correctText = currentQuestion[`option${correctLetter}`];
-          const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
+          const textToSpeak = `${correctLetter} ${correctText}`;
           speakText(textToSpeak).then(audioData => {
             if (audioData) SoundEngine.playBase64Audio(audioData);
           });
