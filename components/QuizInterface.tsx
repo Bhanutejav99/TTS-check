@@ -14,26 +14,25 @@ interface QuizInterfaceProps {
 }
 
 // Estimate timer duration based on question + options word count and TTS speaking rate
-const TTS_WORDS_PER_SECOND = 2.0; // Gemini natural voice is slower than typical TTS
-const THINKING_GAP = 3;      // seconds of silence between question readout and answer
+const TTS_WORDS_PER_SECOND = 2.0;
+const THINKING_GAP = 2;       // seconds of silence between question readout and answer
+const ANSWER_LINGER = 2;      // seconds to stay on screen after reading out the answer
 const MIN_TIMER = 10;         // minimum timer in seconds
-const MIN_ANSWER_TIME = 3;    // minimum seconds to allow for answer readout
 
 // Calculate how long the answer phrase will take to speak
 const getAnswerReadTime = (q: Question): number => {
   const correctText = q[`option${q.correctAnswer}`];
   const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
   const wordCount = answerPhrase.trim().split(/\s+/).length;
-  return Math.max(MIN_ANSWER_TIME, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // no buffer needed — audio is prefetched
+  return Math.max(1, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // pure read time
 };
 
 const calculateDynamicTimer = (q: Question): number => {
-  // Use the ACTUAL TTS text for accurate word count (includes "Options are: A, B, C, D" filler words)
   const fullTTSText = `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
   const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
   const answerReadTime = getAnswerReadTime(q);
-  const total = questionReadTime + THINKING_GAP + answerReadTime;
+  const total = questionReadTime + THINKING_GAP + answerReadTime + ANSWER_LINGER;
   return Math.max(MIN_TIMER, Math.ceil(total));
 };
 
@@ -224,39 +223,50 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const handleTimeUp = () => {
     if (!isQuizActive) return;
     if (isAutomatic) {
-      if (enableSound) SoundEngine.playError();
-      setIsAutoSelecting(true);
-      isAutoSelectingRef.current = true;
-      // Set correct answer — shows green
-      setUserChoices(prev => ({ ...prev, [currentIndex]: currentQuestion.correctAnswer }));
-      // Give 5 seconds for the TTS answer to fully complete before transitioning
-      // The answer TTS was already triggered by handleTick and won't be stopped
-      // because isAutoSelectingRef.current = true prevents cleanup from calling stopTTS
-      autoTransitionRef.current = setTimeout(() => handleNext(), 5000);
+      // In automatic mode, visual reveal already happened in handleTick.
+      // This is just a fallback in case the tab was inactive and handleTick skipped.
+      if (!isAutoSelectingRef.current) {
+        setIsAutoSelecting(true);
+        isAutoSelectingRef.current = true;
+        setUserChoices(prev => ({ ...prev, [currentIndex]: currentQuestion.correctAnswer }));
+      }
+      handleNext();
     } else if (isTimed) {
       handleNext();
     }
   };
 
   const handleTick = (remainingTime: number) => {
-    if (!isQuizActive || isAutoSelecting) return;
+    if (!isQuizActive || isAutoSelectingRef.current) return;
 
-    if (enableSound) {
+    if (enableSound && !isAutomatic) {
       if (remainingTime > 0 && remainingTime <= 5) SoundEngine.playUrgentTick();
       else if (remainingTime === 10) SoundEngine.playTick();
     }
 
-    // Trigger Answer Readout based on dynamic answer length so full text is spoken
-    const answerTime = getAnswerReadTime(currentQuestion);
-    if (enableTTS && remainingTime <= answerTime && hasReadAnswerRef.current !== currentIndex && !selectedOption) {
-      hasReadAnswerRef.current = currentIndex;
-      const correctLetter = currentQuestion.correctAnswer;
-      const correctText = currentQuestion[`option${correctLetter}`];
-      const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
+    if (isAutomatic) {
+      // Trigger SYNCHRONIZED Answer Readout and Visual Reveal
+      const answerReadTime = getAnswerReadTime(currentQuestion);
+      const revealTime = answerReadTime + ANSWER_LINGER; // e.g. 1s read + 2s linger = 3s remaining
 
-      speakText(textToSpeak).then(audioData => {
-        if (audioData) SoundEngine.playBase64Audio(audioData);
-      });
+      if (remainingTime <= revealTime && hasReadAnswerRef.current !== currentIndex) {
+        hasReadAnswerRef.current = currentIndex;
+
+        // 1. Visual Reveal (Green Highlight instantly)
+        setIsAutoSelecting(true);
+        isAutoSelectingRef.current = true;
+        setUserChoices(prev => ({ ...prev, [currentIndex]: currentQuestion.correctAnswer }));
+
+        // 2. Play Audio (Syncs with visual)
+        if (enableTTS) {
+          const correctLetter = currentQuestion.correctAnswer;
+          const correctText = currentQuestion[`option${correctLetter}`];
+          const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
+          speakText(textToSpeak).then(audioData => {
+            if (audioData) SoundEngine.playBase64Audio(audioData);
+          });
+        }
+      }
     }
   };
 
