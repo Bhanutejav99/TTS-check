@@ -360,6 +360,23 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
               {/* Internal Content */}
               <div className="flex flex-col h-full relative z-10 px-6 py-8 lg:px-16 lg:py-10">
+              
+                {/* Question Number Badge (Absolute Top-Left) */}
+                {hasStarted && (
+                  <div className="absolute top-6 left-6 lg:top-10 lg:left-10 z-30 transition-all duration-700 animate-fade-in">
+                    <div 
+                      className="px-4 py-2 rounded-2xl font-black text-xs lg:text-sm tracking-[0.2em] uppercase backdrop-blur-lg border"
+                      style={{ 
+                        backgroundColor: `${themeColor}15`, 
+                        color: themeColor,
+                        borderColor: `${themeColor}30`,
+                        boxShadow: `0 4px 20px -5px ${themeColor}40`
+                      }}
+                    >
+                      Question {String(currentIndex + 1).padStart(2, '0')}
+                    </div>
+                  </div>
+                )}
 
                 {/* Question Area */}
                 <div className={`flex-grow flex flex-col justify-center min-h-0 mb-6 lg:mb-8 transition-all ${currentQuestion.imageUrl ? 'gap-4 lg:gap-6' : ''}`}>
