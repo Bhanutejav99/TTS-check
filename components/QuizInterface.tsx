@@ -465,7 +465,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
             <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
               {(isTimed || isAutomatic) && (
                 <div className="w-12 h-12">
-                  <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && !isAutoSelecting} onTick={handleTick} />
+                  <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && (!isAutoSelecting || isAutomatic)} onTick={handleTick} />
                 </div>
               )}
               <div>
