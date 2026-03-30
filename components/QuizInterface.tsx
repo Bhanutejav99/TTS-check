@@ -30,10 +30,10 @@ const getAnswerReadTime = (q: Question): number => {
 const calculateDynamicTimer = (q: Question): number => {
   const fullTTSText = `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
-  const questionReadTime = wordCount / TTS_WORDS_PER_SECOND;
+  const questionReadTime = Math.ceil(wordCount / TTS_WORDS_PER_SECOND); // Force integer
   const answerReadTime = getAnswerReadTime(q);
   const total = questionReadTime + THINKING_GAP + answerReadTime + ANSWER_LINGER;
-  return Math.max(MIN_TIMER, Math.ceil(total));
+  return Math.max(MIN_TIMER, total);
 };
 
 
