@@ -85,20 +85,19 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         if (audioData) {
           SoundEngine.playBase64Audio(audioData);
         }
+
+        // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
+        const correctLetter = currentQuestion.correctAnswer;
+        const correctText = currentQuestion[`option${correctLetter}`];
+        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+
+        if (currentIndex < questions.length - 1) {
+          const nextQ = questions[currentIndex + 1];
+          await prefetchTTS(`${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`);
+        }
       };
 
       triggerTTS();
-
-      // Prefetch Answer
-      const correctLetter = currentQuestion.correctAnswer;
-      const correctText = currentQuestion[`option${correctLetter}`];
-      prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
-
-      // Prefetch Next Question
-      if (currentIndex < questions.length - 1) {
-        const nextQ = questions[currentIndex + 1];
-        prefetchTTS(`${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`);
-      }
     }
 
     return () => {
@@ -177,9 +176,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       const questionText = `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
       const correctLetter = firstQ.correctAnswer;
       const correctText = firstQ[`option${correctLetter}`];
-      // Fire both prefetches in parallel — don't await, let them run in background
-      prefetchTTS(questionText);
-      prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+      // Sequentially prefetch to avoid concurrency limits
+      prefetchTTS(questionText).then(() => {
+        prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
+      });
     }
 
     if (recordSession) {
