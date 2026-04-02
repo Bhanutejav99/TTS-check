@@ -48,4 +48,5 @@ export interface QuizConfig {
   optionsOff: boolean;
   voiceId: string;
   addIntroOutro: boolean;
+  isVertical: boolean;
 }

@@ -58,7 +58,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff, voiceId, addIntroOutro } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff, voiceId, addIntroOutro, isVertical } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -348,22 +348,32 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     '--accent-dim': `${theme.accent}20`
   } as React.CSSProperties;
 
-  // --- TYPOGRAPHY SYSTEM v2.0 (HERO SCALE - LANDSCAPE ONLY) ---
+  // --- TYPOGRAPHY SYSTEM v2.0 ---
   const getQuestionFontSize = () => {
     const len = currentQuestion.question.length;
     const hasImage = withPicture;
-    // Increased leading from 2.5 to 3.5 for maximum line spacing
-    // Changed text-left to text-center
-    const baseClasses = 'leading-[3.5] tracking-wide text-center transition-all duration-300';
+    const baseClasses = `tracking-wide text-center transition-all duration-300 ${isVertical ? 'leading-[2.0]' : 'leading-[3.5]'}`;
 
-    // Landscape Mode - Image
+    if (isVertical) {
+      if (hasImage) {
+        if (len < 60) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
+        if (len < 100) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
+        return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+      } else {
+        if (len < 40) return `text-5xl lg:text-7xl font-black ${baseClasses}`;
+        if (len < 80) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
+        if (len < 140) return `text-3xl lg:text-4xl font-bold ${baseClasses}`;
+        return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+      }
+    }
+
+    // Landscape Mode
     if (hasImage) {
       if (len < 80) return `text-5xl lg:text-6xl font-black ${baseClasses}`;
       if (len < 120) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
       return `text-3xl lg:text-4xl font-bold ${baseClasses}`;
     }
 
-    // Landscape Mode - Text Only (CINEMATIC HERO)
     if (len < 40) return `text-6xl lg:text-8xl font-black ${baseClasses}`;
     if (len < 80) return `text-5xl lg:text-7xl font-black ${baseClasses}`;
     if (len < 140) return `text-4xl lg:text-6xl font-black ${baseClasses}`;
@@ -388,13 +398,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         {/* THE ARENA */}
         <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 w-full relative bg-black`}>
 
-          {/* STABLE WRAPPER - FIXED 16:9 LANDSCAPE FULL SCREEN */}
+          {/* STABLE WRAPPER - DYNAMIC DIMENSIONS */}
           <div
             ref={cardRef}
-            className={`relative z-10 flex flex-col aspect-video w-full h-full max-h-screen max-w-full`}
+            className={`relative z-10 flex flex-col w-full h-full max-h-screen ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full'}`}
           >
-            {/* INNER ANIMATING CARD - FLUSH FULL 16:9 */}
-            <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden
+            {/* INNER ANIMATING CARD  */}
+            <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden ${isVertical ? 'rounded-none sm:rounded-[2rem] sm:my-2 shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}
                  ${!hasStarted ? 'opacity-80 scale-95' : 'opacity-100 scale-100'}`}
             >
 
@@ -464,32 +474,35 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       </div>
                     </div>
 
-                    <div className={`flex-grow flex ${withPicture ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
-                      <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture ? 'flex-1' : ''}`}>
+                    <div className={`flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center gap-4 lg:gap-8' : 'flex-row items-center gap-8 lg:gap-12') : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
+                      
+                      {/* Image Block MUST move before Text if vertical */}
+                      {withPicture && isVertical && (
+                         <div className={`relative shrink-0 group w-48 h-48 lg:w-[24rem] lg:h-[24rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
+                          {currentQuestion.imageUrl && (
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-48 h-48 lg:w-[24rem] lg:h-[24rem] aspect-square transition-all duration-700'; }} />
+                          )}
+                        </div>
+                      )}
+
+                      <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture && !isVertical ? 'flex-1' : ''}`}>
                         <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
                           <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
                         </h2>
                       </div>
 
-                      {withPicture && (
+                      {/* Image Block stays beside Text if landscape */}
+                      {withPicture && !isVertical && (
                         <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img
-                              src={currentQuestion.imageUrl}
-                              alt="Visual Context"
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                              onError={(e) => { 
-                                (e.target as HTMLImageElement).style.display = 'none'; 
-                                e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; 
-                              }}
-                            />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; }} />
                           )}
                         </div>
                       )}
                     </div>
 
                     <div className="flex-shrink-0 flex flex-col justify-end">
-                      <div className={`grid gap-5 lg:gap-8 transition-all duration-1000 delay-300 grid-cols-1 md:grid-cols-2
+                      <div className={`grid ${isVertical ? 'gap-3 lg:gap-4 grid-cols-1' : 'gap-5 lg:gap-8 grid-cols-1 md:grid-cols-2'} transition-all duration-1000 delay-300
                         ${!hasStarted ? 'opacity-0 translate-y-12' : 'opacity-100 translate-y-0'}`}>
 
                         {(['A', 'B', 'C', 'D'] as const).map((key) => {
@@ -502,14 +515,14 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                               key={key}
                               onClick={() => !isAutomatic && !isAutoSelecting && handleOptionSelect(key)}
                               disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-                              className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg min-h-[7rem] lg:min-h-[9rem] py-4
+                              className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg ${isVertical ? 'min-h-[4.5rem] lg:min-h-[6rem] py-2' : 'min-h-[7rem] lg:min-h-[9rem] py-4'}
                                 ${isSelected && !isAutoSelecting ? 'scale-[1.02] z-20 bg-slate-100' :
                                   isCorrect ? 'scale-[1.05] z-30 bg-emerald-500 border-emerald-400 text-white' :
                                     isWrong ? 'bg-rose-500 border-rose-400 opacity-80 text-white' : 'bg-white border-transparent hover:border-white/50'} 
                                 ${isSelected && !isAutoSelecting ? '' : !isCorrect && !isWrong ? '' : ''}`}
                               style={isSelected && !isAutoSelecting ? { borderColor: theme.accent } : {}}
                             >
-                              <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 w-16 h-16 lg:w-20 lg:h-20 mr-6 lg:mr-8 text-3xl lg:text-5xl lg:rounded-[1.5rem]
+                              <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 mr-4 lg:mr-8 ${isVertical ? 'w-12 h-12 lg:w-16 lg:h-16 text-2xl lg:text-3xl' : 'w-16 h-16 lg:w-20 lg:h-20 text-3xl lg:text-5xl lg:rounded-[1.5rem]'}
                                  ${isCorrect ? 'bg-white text-emerald-600 rotate-[360deg]' :
                                   isWrong ? 'bg-white text-rose-500' :
                                     isSelected ? 'bg-[var(--theme-bg)] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
@@ -518,7 +531,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                                 {key}
                               </div>
 
-                              <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.6] text-2xl lg:text-4xl
+                              <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.4] ${isVertical ? 'text-xl lg:text-2xl md:text-3xl' : 'text-2xl lg:text-4xl'}
                                  ${isCorrect || isWrong ? 'text-white' : 'text-slate-900'}`}>
                                 {currentQuestion[`option${key}`]}
                               </span>

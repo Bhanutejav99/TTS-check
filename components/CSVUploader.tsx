@@ -42,6 +42,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [withPicture, setWithPicture] = useState(false);
   const [optionsOff, setOptionsOff] = useState(false);
   const [addIntroOutro, setAddIntroOutro] = useState(false);
+  const [isVertical, setIsVertical] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState('tQHPlZCaA3Oe1X8BqFIp');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
@@ -114,7 +115,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       withPicture,
       optionsOff,
       voiceId: selectedVoiceId,
-      addIntroOutro
+      addIntroOutro,
+      isVertical
     });
   };
 
@@ -282,6 +284,19 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                     </div>
                     <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${addIntroOutro ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canvas Format Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Canvas Format</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{isVertical ? 'V/9:16 (Shorts)' : 'H/16:9 (Desktop)'}</span>
+                    </div>
+                    <button onClick={() => setIsVertical(!isVertical)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${isVertical ? 'bg-fuchsia-500/20 border-fuchsia-500/40' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${isVertical ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-fuchsia-400' : 'left-0.5 bg-white/50'}`} />
                     </button>
                   </div>
                 </div>
