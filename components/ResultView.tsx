@@ -1,24 +1,25 @@
 
 import React from 'react';
-import { Question, UserAnswer } from '../types.ts';
+import { Question, UserAnswer, ThemeOption } from '../types.ts';
 
 interface ResultViewProps {
   questions: Question[];
   answers: UserAnswer[];
+  theme: ThemeOption;
   onRestart: () => void;
 }
 
-const ResultView: React.FC<ResultViewProps> = ({ questions, answers, onRestart }) => {
+const ResultView: React.FC<ResultViewProps> = ({ questions, answers, theme, onRestart }) => {
   const score = answers.filter(a => a.isCorrect).length;
   const percentage = Math.round((score / questions.length) * 100);
   const isPass = percentage >= 70;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12 lg:py-20 animate-fade-in">
-      <div className="bg-[#04192c] rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
+      <div className="bg-[var(--theme-bg)] rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl shadow-black/50" style={{ '--theme-bg': theme.bg, '--theme-card': theme.card } as React.CSSProperties}>
         
         {/* Score Header */}
-        <div className="bg-[#0B2545] p-12 lg:p-24 text-center relative overflow-hidden">
+        <div className="bg-[var(--theme-card)] p-12 lg:p-24 text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-transparent to-transparent"></div>
           
           <div className="relative z-10">
@@ -48,7 +49,7 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, answers, onRestart }
         </div>
 
         {/* Breakdown Section */}
-        <div className="p-8 lg:p-16 bg-[#04192c]">
+        <div className="p-8 lg:p-16 bg-[var(--theme-bg)]">
           <div className="flex items-center justify-between mb-10">
             <h3 className="text-2xl font-black text-white tracking-tight">Technical Review</h3>
             <div className="flex gap-4">
@@ -101,14 +102,14 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, answers, onRestart }
             <div className="flex flex-col sm:flex-row gap-4 print:hidden">
               <button 
                 onClick={() => window.print()} 
-                className="px-12 py-5 bg-[#0B2545] text-white border border-white/10 font-black text-sm rounded-2xl hover:bg-white/10 transition-all uppercase tracking-widest active:scale-95 shadow-xl flex items-center justify-center gap-3"
+                className="px-12 py-5 bg-[var(--theme-card)] text-white border border-white/10 font-black text-sm rounded-2xl hover:bg-white/10 transition-all uppercase tracking-widest active:scale-95 shadow-xl flex items-center justify-center gap-3"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Download PDF
               </button>
               <button 
                 onClick={onRestart} 
-                className="px-12 py-5 bg-white text-[#04192c] font-black text-sm rounded-2xl hover:bg-emerald-400 transition-all uppercase tracking-widest active:scale-95 shadow-2xl"
+                className="px-12 py-5 bg-white text-[var(--theme-bg)] font-black text-sm rounded-2xl hover:bg-emerald-400 transition-all uppercase tracking-widest active:scale-95 shadow-2xl"
               >
                 Start New Simulation
               </button>

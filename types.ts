@@ -26,6 +26,14 @@ export enum AppPhase {
 
 export type LayoutMode = 'LANDSCAPE' | 'PORTRAIT';
 
+export interface ThemeOption {
+  id: string;
+  name: string;
+  bg: string;
+  card: string;
+  accent: string;
+}
+
 export interface QuizConfig {
   isTimed: boolean;
   title: string;
@@ -33,7 +41,7 @@ export interface QuizConfig {
   autoTimeLimit: number;
   recordSession: boolean;
   layoutMode: LayoutMode;
-  themeColor: string;
+  theme: ThemeOption;
   enableSound: boolean;
   enableTTS: boolean;
   withPicture: boolean;

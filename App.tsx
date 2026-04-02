@@ -70,7 +70,7 @@ const App: React.FC = () => {
             onExit={handleRestart}
           />
         )}
-        {phase === AppPhase.RESULT && <ResultView questions={questions} answers={finalAnswers} onRestart={handleRestart} />}
+        {phase === AppPhase.RESULT && quizConfig && <ResultView questions={questions} answers={finalAnswers} theme={quizConfig.theme} onRestart={handleRestart} />}
       </main>
 
       {phase !== AppPhase.UPLOAD && phase !== AppPhase.QUIZ && (

@@ -55,7 +55,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS, withPicture, optionsOff } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -287,9 +287,11 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const progressPercent = ((currentIndex + 1) / questions.length) * 100;
 
   const themeStyles = {
-    '--accent-color': themeColor,
-    '--accent-light': `${themeColor}40`,
-    '--accent-dim': `${themeColor}20`
+    '--theme-bg': theme.bg,
+    '--theme-card': theme.card,
+    '--accent-color': theme.accent,
+    '--accent-light': `${theme.accent}40`,
+    '--accent-dim': `${theme.accent}20`
   } as React.CSSProperties;
 
   // --- TYPOGRAPHY SYSTEM v2.0 (HERO SCALE - LANDSCAPE ONLY) ---
@@ -316,13 +318,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   };
 
   return (
-    <div className="flex-grow flex flex-col relative overflow-hidden bg-[#04192c] h-screen" style={themeStyles}>
+    <div className="flex-grow flex flex-col relative overflow-hidden bg-[var(--theme-bg)] h-screen" style={themeStyles}>
 
       {/* Precision Progress Bar */}
       <div className="h-2 w-full bg-white/10 sticky top-0 z-[100]">
         <div
           className="h-full transition-all duration-1000 cubic-bezier(0.16, 1, 0.3, 1)"
-          style={{ width: `${progressPercent}%`, backgroundColor: themeColor, boxShadow: `0 0 15px ${themeColor}60` }}
+          style={{ width: `${progressPercent}%`, backgroundColor: theme.accent, boxShadow: `0 0 15px ${theme.accent}60` }}
         />
       </div>
 
@@ -338,13 +340,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
             className={`relative z-10 flex flex-col aspect-video w-full h-full max-h-screen max-w-full`}
           >
             {/* INNER ANIMATING CARD - FLUSH FULL 16:9 */}
-            <div className={`w-full h-full bg-[#04192c] flex flex-col relative transition-all duration-700 overflow-hidden
+            <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden
                  ${!hasStarted ? 'opacity-80 scale-95' : 'opacity-100 scale-100'}`}
             >
 
               {!hasStarted && (
-                <div className="absolute inset-0 z-50 bg-[#04192c]/80 backdrop-blur-3xl flex items-center justify-center p-8">
-                  <div className="text-center bg-[#0B2545] p-10 rounded-[3rem] shadow-2xl max-w-sm animate-fade-in border border-white/10">
+                <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-3xl flex items-center justify-center p-8">
+                  <div className="text-center bg-[var(--theme-card)] p-10 rounded-[3rem] shadow-2xl max-w-sm animate-fade-in border border-white/10">
                     <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner bg-white/5 text-white">
                       {isInitializing ? (
                         <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -359,7 +361,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       onClick={handleStart}
                       disabled={isInitializing}
                       className="w-full py-6 text-white font-black rounded-[1.5rem] hover:opacity-90 transition-all uppercase tracking-[0.3em] active:scale-95 shadow-xl disabled:opacity-50 disabled:cursor-wait"
-                      style={{ backgroundColor: themeColor }}
+                      style={{ backgroundColor: theme.accent }}
                     >
                       {isInitializing ? 'Please Wait' : (recordSession ? 'Start Broadcast' : 'Start Engine')}
                     </button>
@@ -376,10 +378,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                     <div 
                       className="px-4 py-2 rounded-2xl font-black text-xs lg:text-sm tracking-[0.2em] uppercase backdrop-blur-lg border"
                       style={{ 
-                        backgroundColor: `${themeColor}15`, 
-                        color: themeColor,
-                        borderColor: `${themeColor}30`,
-                        boxShadow: `0 4px 20px -5px ${themeColor}40`
+                        backgroundColor: `${theme.accent}15`, 
+                        color: theme.accent,
+                        borderColor: `${theme.accent}30`,
+                        boxShadow: `0 4px 20px -5px ${theme.accent}40`
                       }}
                     >
                       Question {String(currentIndex + 1).padStart(2, '0')}
@@ -433,14 +435,14 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                               isCorrect ? 'scale-[1.05] z-30 bg-emerald-500 border-emerald-400 text-white' :
                                 isWrong ? 'bg-rose-500 border-rose-400 opacity-80 text-white' : 'bg-white border-transparent hover:border-white/50'} 
                             ${isSelected && !isAutoSelecting ? '' : !isCorrect && !isWrong ? '' : ''}`}
-                          style={isSelected && !isAutoSelecting ? { borderColor: themeColor } : {}}
+                          style={isSelected && !isAutoSelecting ? { borderColor: theme.accent } : {}}
                         >
                           {/* Option Label (A/B/C/D) */}
                           <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 w-16 h-16 lg:w-20 lg:h-20 mr-6 lg:mr-8 text-3xl lg:text-5xl lg:rounded-[1.5rem]
                              ${isCorrect ? 'bg-white text-emerald-600 rotate-[360deg]' :
                               isWrong ? 'bg-white text-rose-500' :
-                                isSelected ? 'bg-[#04192c] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
-                            style={isSelected && !isCorrect ? { backgroundColor: themeColor } : {}}
+                                isSelected ? 'bg-[var(--theme-bg)] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
+                            style={isSelected && !isCorrect ? { backgroundColor: theme.accent } : {}}
                           >
                             {key}
                           </div>
@@ -454,7 +456,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                           {(isCorrect || (isSelected && !isAutoSelecting)) && (
                             <div className="ml-4 animate-in zoom-in duration-500 shrink-0">
                               <div className="rounded-full flex items-center justify-center w-10 h-10"
-                                style={{ backgroundColor: isCorrect ? 'white' : themeColor, color: isCorrect ? '#10B981' : 'white' }}
+                                style={{ backgroundColor: isCorrect ? 'white' : theme.accent, color: isCorrect ? '#10B981' : 'white' }}
                               >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>
                               </div>
@@ -490,7 +492,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         </div>
 
         {/* BOTTOM CONTROL DECK */}
-        <div className="w-full px-8 py-4 flex items-center justify-between bg-[#04192c] border-t border-white/5 z-20 shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div className="w-full px-8 py-4 flex items-center justify-between bg-[var(--theme-bg)] border-t border-white/5 z-20 shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
           {/* Left: Status & Timer */}
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
@@ -501,7 +503,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               )}
               <div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Engine Status</p>
-                <p className="text-lg font-black text-white italic tracking-tight leading-none" style={{ color: isAutoSelecting ? themeColor : 'white' }}>
+                <p className="text-lg font-black text-white italic tracking-tight leading-none" style={{ color: isAutoSelecting ? theme.accent : 'white' }}>
                   {isAutoSelecting ? 'Revealing...' : (isQuizActive ? 'Live Session' : 'Standby')}
                 </p>
               </div>
@@ -524,8 +526,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
             <button
               onClick={handleNext}
               disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-              className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest text-[#04192c] bg-white hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale"
-              style={{ backgroundColor: themeColor, color: 'white', boxShadow: `0 10px 20px -5px ${themeColor}60` }}
+              className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-white hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale"
+              style={{ backgroundColor: theme.accent, color: 'white', boxShadow: `0 10px 20px -5px ${theme.accent}60` }}
             >
               <span>Next Slide</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Question, QuizConfig, LayoutMode } from '../types.ts';
+import { Question, QuizConfig, LayoutMode, ThemeOption } from '../types.ts';
 import { speakText } from '../services/geminiTTS.ts';
 import { SoundEngine } from '../utils/SoundEngine.ts';
 
@@ -8,15 +8,12 @@ interface CSVUploaderProps {
   onQuestionsLoaded: (questions: Question[], config: QuizConfig) => void;
 }
 
-const THEME_COLORS = [
-  { name: 'Indigo', value: '#4F46E5' },
-  { name: 'Violet', value: '#7C3AED' },
-  { name: 'Fuchsia', value: '#C026D3' },
-  { name: 'Rose', value: '#E11D48' },
-  { name: 'Orange', value: '#EA580C' },
-  { name: 'Teal', value: '#0D9488' },
-  { name: 'Blue', value: '#2563EB' },
-  { name: 'Black', value: '#000000' },
+export const QUIZ_THEMES: ThemeOption[] = [
+  { id: 'default', name: 'Navy Cinematic (Default)', bg: '#04192c', card: '#0B2545', accent: '#4F46E5' },
+  { id: 'obsidian', name: 'Obsidian Black', bg: '#09090b', card: '#171717', accent: '#10b981' },
+  { id: 'amethyst', name: 'Amethyst Night', bg: '#1f0931', card: '#2d1445', accent: '#c026d3' },
+  { id: 'crimson', name: 'Blood Moon', bg: '#2e0413', card: '#4c0b24', accent: '#e11d48' },
+  { id: 'ocean', name: 'Deep Ocean', bg: '#042f2e', card: '#0f766e', accent: '#06b6d4' }
 ];
 
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
@@ -29,7 +26,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [recordSession, setRecordSession] = useState(false);
   // Forced Landscape Mode
   const layoutMode: LayoutMode = 'LANDSCAPE';
-  const [themeColor, setThemeColor] = useState('#4F46E5');
+  const [selectedThemeId, setSelectedThemeId] = useState('default');
   const [enableSound, setEnableSound] = useState(true);
   const [enableTTS, setEnableTTS] = useState(false);
   const [testTitle, setTestTitle] = useState('');
@@ -101,7 +98,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       title: testTitle,
       recordSession,
       layoutMode,
-      themeColor,
+      theme: QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0],
       enableSound,
       enableTTS,
       withPicture,
@@ -142,17 +139,23 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                 <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Branding & Theme</span>
               </div>
 
-              <div className="p-4 bg-[#1A2333] rounded-full border border-white/5 shadow-inner">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3 px-2">Brand Accent Color</p>
-                <div className="flex items-center gap-2 px-1">
-                  {THEME_COLORS.map(c => (
+              <div className="p-4 bg-[#1A2333] rounded-[1.5rem] border border-white/5 shadow-inner">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3 px-2">Select Engine Theme</p>
+                <div className="flex flex-wrap gap-3 px-1">
+                  {QUIZ_THEMES.map(theme => (
                     <button
-                      key={c.name}
-                      onClick={() => setThemeColor(c.value)}
-                      className={`w-8 h-8 rounded-full transition-all hover:scale-110 flex-shrink-0 ${themeColor === c.value ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-[#1A2333] scale-110' : 'ring-1 ring-white/20'}`}
-                      style={{ backgroundColor: c.value }}
-                      title={c.name}
-                    />
+                      key={theme.id}
+                      onClick={() => setSelectedThemeId(theme.id)}
+                      className={`relative overflow-hidden rounded-xl h-14 flex-1 min-w-[30%] transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-[#1A2333] scale-[1.02]' : 'ring-1 ring-white/10 hover:ring-white/30'}`}
+                      style={{ backgroundColor: theme.bg }}
+                      title={theme.name}
+                    >
+                      <div className="absolute inset-0 bg-black/20"></div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-2 z-10">
+                         <div className="w-4 h-4 rounded-full border border-white/20 mb-1" style={{ backgroundColor: theme.accent }}></div>
+                         <span className="text-[8px] font-black uppercase text-white/90 tracking-widest leading-none drop-shadow-md">{theme.name.split(' ')[0]}</span>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>
