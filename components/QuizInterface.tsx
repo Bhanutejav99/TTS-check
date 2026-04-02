@@ -302,9 +302,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
     // Landscape Mode - Image
     if (hasImage) {
-      if (len < 60) return `text-5xl lg:text-6xl font-black ${baseClasses}`;
-      if (len < 120) return `text-3xl lg:text-4xl font-bold ${baseClasses}`;
-      return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+      if (len < 80) return `text-5xl lg:text-6xl font-black ${baseClasses}`;
+      if (len < 120) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
+      return `text-3xl lg:text-4xl font-bold ${baseClasses}`;
     }
 
     // Landscape Mode - Text Only (CINEMATIC HERO)
