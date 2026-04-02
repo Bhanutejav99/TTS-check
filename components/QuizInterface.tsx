@@ -286,7 +286,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // --- TYPOGRAPHY SYSTEM v2.0 (HERO SCALE - LANDSCAPE ONLY) ---
   const getQuestionFontSize = () => {
     const len = currentQuestion.question.length;
-    const hasImage = withPicture && !!currentQuestion.imageUrl;
+    const hasImage = withPicture;
     // Increased leading from 2.5 to 3.5 for maximum line spacing
     // Changed text-left to text-center
     const baseClasses = 'leading-[3.5] tracking-wide text-center transition-all duration-300';
@@ -379,22 +379,27 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                 )}
 
                 {/* Question Area */}
-                <div className={`flex-grow flex ${withPicture && currentQuestion.imageUrl ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
+                <div className={`flex-grow flex ${withPicture ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
 
-                  <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture && currentQuestion.imageUrl ? 'flex-1' : ''}`}>
+                  <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture ? 'flex-1' : ''}`}>
                     <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
                       <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
                     </h2>
                   </div>
 
-                  {withPicture && currentQuestion.imageUrl && (
-                    <div className="relative shrink-0 overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700">
-                      <img
-                        src={currentQuestion.imageUrl}
-                        alt="Visual Context"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
+                  {withPicture && (
+                    <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
+                      {currentQuestion.imageUrl && (
+                        <img
+                          src={currentQuestion.imageUrl}
+                          alt="Visual Context"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          onError={(e) => { 
+                            (e.target as HTMLImageElement).style.display = 'none'; 
+                            e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; 
+                          }}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
