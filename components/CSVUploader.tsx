@@ -180,124 +180,144 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                 <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Engine Logic</span>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Auto-Advance</span>
-                  <button onClick={() => setIsAutomatic(!isAutomatic)} className={`w-12 h-6 rounded-full relative transition-colors border ${isAutomatic ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${isAutomatic ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
-                </div>
-
-                {isAutomatic && (
-                  <div className="px-6 py-2">
-                    <input type="range" min="5" max="60" step="5" value={autoTimeLimit} onChange={(e) => setAutoTimeLimit(parseInt(e.target.value))} className="w-full h-1.5 bg-[#0B1A2C] rounded-lg appearance-none cursor-pointer accent-indigo-400" />
-                    <p className="text-right text-[10px] font-bold text-indigo-400 mt-2">{autoTimeLimit}s per Slide</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio SFX</span>
-                  <button onClick={() => setEnableSound(!enableSound)} className={`w-12 h-6 rounded-full relative transition-colors border ${enableSound ? 'bg-indigo-500 border-indigo-400' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableSound ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">ElevenLabs TTS</span>
-                  </div>
-                  <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Skip Options TTS</span>
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Save Credits</span>
-                  </div>
-                  <button onClick={() => setOptionsOff(!optionsOff)} className={`w-12 h-6 rounded-full relative transition-colors border ${optionsOff ? 'bg-rose-500/20 border-rose-500/30' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${optionsOff ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-rose-400' : 'left-0.5 bg-white/50'}`} />
-                  </button>
-                </div>
-
-                {enableTTS && (
-                  <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333]/50 border border-white/5 rounded-[1.5rem] mt-[-0.5rem]">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Voice Persona</span>
-                      <select 
-                        value={selectedVoiceId}
-                        onChange={(e) => setSelectedVoiceId(e.target.value)}
-                        className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none"
-                      >
-                        {ELEVENLABS_VOICES.map(voice => (
-                          <option key={voice.id} value={voice.id}>{voice.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {enableTTS && (
-                  <div className="px-6 py-1">
-                    <button
-                      onClick={async () => {
-                        setIsTestingTTS(true);
-                        SoundEngine.init();
-                        const data = await speakText("Testing the AI Auto-Reader. If you hear this, the system is working correctly.", selectedVoiceId);
-                        if (data) SoundEngine.playBase64Audio(data);
-                        setIsTestingTTS(false);
-                      }}
-                      disabled={isTestingTTS}
-                      className="text-[9px] font-bold uppercase tracking-widest text-indigo-300 hover:text-white transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {isTestingTTS ? (
-                        <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" /><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" /></svg>
-                      )}
-                      <span>{isTestingTTS ? 'Testing...' : 'Test Reader Connection'}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Auto-Advance Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Auto-Advance</span>
+                    <button onClick={() => setIsAutomatic(!isAutomatic)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${isAutomatic ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${isAutomatic ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
                     </button>
                   </div>
-                )}
-
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Cinematic Slides</span>
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Intro & Outro Auto-Added</span>
-                  </div>
-                  <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-12 h-6 rounded-full relative transition-colors border ${addIntroOutro ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
+                  {isAutomatic && (
+                    <div className="px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
+                      <input type="range" min="5" max="60" step="5" value={autoTimeLimit} onChange={(e) => setAutoTimeLimit(parseInt(e.target.value))} className="w-full h-1.5 bg-[#0B1A2C] rounded-lg appearance-none cursor-pointer accent-indigo-400" />
+                      <p className="text-right text-[10px] font-bold text-indigo-400 mt-2">{autoTimeLimit}s per Slide</p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">With Picture</span>
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Show image (1:1)</span>
+                {/* Studio SFX Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio SFX</span>
+                    <button onClick={() => setEnableSound(!enableSound)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableSound ? 'bg-indigo-500 border-indigo-400' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableSound ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
                   </div>
-                  <button onClick={() => setWithPicture(!withPicture)} className={`w-12 h-6 rounded-full relative transition-colors border ${withPicture ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${withPicture ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
                 </div>
 
-                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio Record</span>
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">WebM Output</span>
+                {/* AI Auto-Reader Block (Spans full width if expanded) */}
+                <div className={`flex flex-col gap-2 ${enableTTS ? 'md:col-span-2' : ''}`}>
+                  <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">ElevenLabs TTS</span>
+                    </div>
+                    <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
                   </div>
-                  <button onClick={() => setRecordSession(!recordSession)} className={`w-12 h-6 rounded-full relative transition-colors border ${recordSession ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${recordSession ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                  </button>
+                  
+                  {enableTTS && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Voice Persona</span>
+                          <select 
+                            value={selectedVoiceId}
+                            onChange={(e) => setSelectedVoiceId(e.target.value)}
+                            className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none w-full"
+                          >
+                            {ELEVENLABS_VOICES.map(voice => (
+                              <option key={voice.id} value={voice.id}>{voice.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
+                        <button
+                          onClick={async () => {
+                            setIsTestingTTS(true);
+                            SoundEngine.init();
+                            const data = await speakText("Testing the AI Auto-Reader.", selectedVoiceId);
+                            if (data) SoundEngine.playBase64Audio(data);
+                            setIsTestingTTS(false);
+                          }}
+                          disabled={isTestingTTS}
+                          className="w-full h-full text-[9px] font-bold uppercase tracking-widest text-indigo-300 hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {isTestingTTS ? (
+                            <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" /><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" /></svg>
+                          )}
+                          <span>{isTestingTTS ? 'Testing...' : 'Test Connection'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {recordSession && (
-                  <div className="px-6 py-3 bg-rose-500/5 rounded-[1.5rem] border border-rose-500/10 mt-1">
-                    <p className="text-[9px] font-bold text-rose-300/80 uppercase tracking-widest leading-relaxed">
-                      ⚠️ Important: Select <span className="text-white border-b border-white/50">"This Tab"</span> in the browser popup to enable auto-cropping.
-                    </p>
+
+                {/* Skip Options Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Skip Options TTS</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Save Credits</span>
+                    </div>
+                    <button onClick={() => setOptionsOff(!optionsOff)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${optionsOff ? 'bg-rose-500/20 border-rose-500/30' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${optionsOff ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-rose-400' : 'left-0.5 bg-white/50'}`} />
+                    </button>
                   </div>
-                )}
+                </div>
+
+                {/* Cinematic Slides Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Cinematic Slides</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Intro & Outro</span>
+                    </div>
+                    <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${addIntroOutro ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* With Picture Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">With Picture</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Show Image (1:1)</span>
+                    </div>
+                    <button onClick={() => setWithPicture(!withPicture)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${withPicture ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${withPicture ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Studio Record Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio Record</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">WebM Output</span>
+                    </div>
+                    <button onClick={() => setRecordSession(!recordSession)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${recordSession ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${recordSession ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                    </button>
+                  </div>
+                  {recordSession && (
+                    <div className="px-4 py-3 bg-rose-500/5 rounded-[1.2rem] border border-rose-500/10">
+                      <p className="text-[9px] font-bold text-rose-300/80 uppercase tracking-widest leading-relaxed">
+                        ⚠️ Select <span className="text-white border-b border-white/50">"This Tab"</span> in popup to auto-crop.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
