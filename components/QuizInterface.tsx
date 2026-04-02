@@ -356,13 +356,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
     if (isVertical) {
       if (hasImage) {
-        if (len < 60) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
-        if (len < 100) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
-        return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+        if (len < 60) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
+        if (len < 100) return `text-2xl lg:text-3xl font-black ${baseClasses}`;
+        return `text-xl lg:text-2xl font-bold ${baseClasses}`;
       } else {
-        if (len < 40) return `text-5xl lg:text-7xl font-black ${baseClasses}`;
-        if (len < 80) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
-        if (len < 140) return `text-3xl lg:text-4xl font-bold ${baseClasses}`;
+        if (len < 60) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
+        if (len < 120) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
         return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
       }
     }
@@ -474,18 +473,18 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       </div>
                     </div>
 
-                    <div className={`flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center gap-4 lg:gap-8' : 'flex-row items-center gap-8 lg:gap-12') : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
+                    <div className={`flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center justify-center gap-2 lg:gap-4' : 'flex-row items-center gap-8 lg:gap-12') : 'flex-col justify-center'} min-h-0 ${isVertical ? 'mb-2 lg:mb-4' : 'mb-6 lg:mb-8'} transition-all`}>
                       
                       {/* Image Block MUST move before Text if vertical */}
                       {withPicture && isVertical && (
-                         <div className={`relative shrink-0 group w-48 h-48 lg:w-[24rem] lg:h-[24rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
+                         <div className={`relative shrink-0 w-full max-w-[16rem] lg:max-w-[18rem] max-h-[30vh] aspect-square flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-48 h-48 lg:w-[24rem] lg:h-[24rem] aspect-square transition-all duration-700'; }} />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 w-full max-w-[16rem] lg:max-w-[18rem] max-h-[30vh] flex justify-center items-center aspect-square transition-all duration-700 mx-auto'; }} />
                           )}
                         </div>
                       )}
 
-                      <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture && !isVertical ? 'flex-1' : ''}`}>
+                      <div className={`w-full max-h-full overflow-y-auto no-scrollbar ${isVertical ? 'py-1 lg:py-2' : 'py-6 lg:py-8'} flex flex-col justify-center ${withPicture && !isVertical ? 'flex-1' : ''}`}>
                         <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
                           <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
                         </h2>
