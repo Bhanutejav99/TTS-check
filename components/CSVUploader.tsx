@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Question, QuizConfig, LayoutMode, ThemeOption } from '../types.ts';
-import { speakText } from '../services/geminiTTS.ts';
+import { speakText } from '../services/elevenLabsTTS.ts';
 import { SoundEngine } from '../utils/SoundEngine.ts';
 
 interface CSVUploaderProps {
@@ -14,6 +14,14 @@ export const QUIZ_THEMES: ThemeOption[] = [
   { id: 'amethyst', name: 'Amethyst Night', bg: '#1f0931', card: '#2d1445', accent: '#c026d3' },
   { id: 'crimson', name: 'Blood Moon', bg: '#2e0413', card: '#4c0b24', accent: '#e11d48' },
   { id: 'ocean', name: 'Deep Ocean', bg: '#042f2e', card: '#0f766e', accent: '#06b6d4' }
+];
+
+const ELEVENLABS_VOICES = [
+  { id: 'tQHPlZCaA3Oe1X8BqFIp', name: 'Niladri (Teacher)' },
+  { id: 'pNInz6obbfDQGcgMyIGC', name: 'Adam (Narrator)' },
+  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni (Dynamic)' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella (Calm)' },
+  { id: 'XB0fDUnXU5powW0NhzG7', name: 'Charlotte (Engaging)' }
 ];
 
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
@@ -33,6 +41,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [isTestingTTS, setIsTestingTTS] = useState(false);
   const [withPicture, setWithPicture] = useState(false);
   const [optionsOff, setOptionsOff] = useState(false);
+  const [addIntroOutro, setAddIntroOutro] = useState(false);
+  const [selectedVoiceId, setSelectedVoiceId] = useState('tQHPlZCaA3Oe1X8BqFIp');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
   const [pastedText, setPastedText] = useState('');
@@ -102,7 +112,9 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       enableSound,
       enableTTS,
       withPicture,
-      optionsOff
+      optionsOff,
+      voiceId: selectedVoiceId,
+      addIntroOutro
     });
   };
 
@@ -211,12 +223,29 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                 </div>
 
                 {enableTTS && (
+                  <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333]/50 border border-white/5 rounded-[1.5rem] mt-[-0.5rem]">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Voice Persona</span>
+                      <select 
+                        value={selectedVoiceId}
+                        onChange={(e) => setSelectedVoiceId(e.target.value)}
+                        className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none"
+                      >
+                        {ELEVENLABS_VOICES.map(voice => (
+                          <option key={voice.id} value={voice.id}>{voice.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {enableTTS && (
                   <div className="px-6 py-1">
                     <button
                       onClick={async () => {
                         setIsTestingTTS(true);
                         SoundEngine.init();
-                        const data = await speakText("Testing the AI Auto-Reader. If you hear this, the system is working correctly.");
+                        const data = await speakText("Testing the AI Auto-Reader. If you hear this, the system is working correctly.", selectedVoiceId);
                         if (data) SoundEngine.playBase64Audio(data);
                         setIsTestingTTS(false);
                       }}
@@ -232,6 +261,16 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                     </button>
                   </div>
                 )}
+
+                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Cinematic Slides</span>
+                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Intro & Outro Auto-Added</span>
+                  </div>
+                  <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-12 h-6 rounded-full relative transition-colors border ${addIntroOutro ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                  </button>
+                </div>
 
                 <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
                   <div className="flex flex-col">

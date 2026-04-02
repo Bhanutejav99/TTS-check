@@ -16,10 +16,13 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
     return window.btoa(binary);
 };
 
-export const speakText = async (text: string): Promise<string | null> => {
-    if (ttsCache.has(text)) {
+export const speakText = async (text: string, overrideVoiceId?: string): Promise<string | null> => {
+    const targetVoiceId = overrideVoiceId || VOICE_ID;
+    const cacheKey = `${targetVoiceId}-${text}`;
+    
+    if (ttsCache.has(cacheKey)) {
         console.log("ElevenLabs TTS: Cache hit for text");
-        return ttsCache.get(text)!;
+        return ttsCache.get(cacheKey)!;
     }
 
     try {
@@ -31,9 +34,9 @@ export const speakText = async (text: string): Promise<string | null> => {
         }
 
         console.log("ElevenLabs TTS: Generating speech for:", text.substring(0, 60) + "...");
-        console.log("ElevenLabs TTS: Using voice:", VOICE_ID, "| model:", MODEL_ID);
+        console.log("ElevenLabs TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
 
-        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`, {
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${targetVoiceId}?output_format=mp3_44100_128`, {
             method: 'POST',
             headers: {
                 'xi-api-key': apiKey,
@@ -60,7 +63,7 @@ export const speakText = async (text: string): Promise<string | null> => {
 
         if (base64Audio) {
             console.log("ElevenLabs TTS: Received audio data, length:", base64Audio.length);
-            ttsCache.set(text, base64Audio);
+            ttsCache.set(cacheKey, base64Audio);
         }
 
         return base64Audio || null;
@@ -70,8 +73,11 @@ export const speakText = async (text: string): Promise<string | null> => {
     }
 };
 
-export const prefetchTTS = async (text: string) => {
-    if (ttsCache.has(text)) return;
+export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {
+    const targetVoiceId = overrideVoiceId || VOICE_ID;
+    const cacheKey = `${targetVoiceId}-${text}`;
+    if (ttsCache.has(cacheKey)) return;
+    
     console.log("ElevenLabs TTS: Prefetching text:", text.substring(0, 30) + "...");
-    await speakText(text);
+    await speakText(text, overrideVoiceId);
 };

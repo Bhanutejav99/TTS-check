@@ -6,6 +6,8 @@ import { SoundEngine } from '../utils/SoundEngine.ts';
 import { useScreenRecorder } from '../hooks/useScreenRecorder.ts';
 import { speakText, prefetchTTS } from '../services/elevenLabsTTS.ts';
 
+type SlideType = 'INTRO' | 'QUESTION' | 'OUTRO';
+
 interface QuizInterfaceProps {
   questions: Question[];
   config: QuizConfig;
@@ -48,6 +50,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const [hasStarted, setHasStarted] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [slideType, setSlideType] = useState<SlideType>(config.addIntroOutro ? 'INTRO' : 'QUESTION');
 
   const hasReadAnswerRef = useRef<number | null>(null);
   const autoTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,7 +58,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff, voiceId, addIntroOutro } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -77,64 +80,6 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     hasReadAnswerRef.current = null;
   }, [currentIndex]);
 
-  // TTS Question Effect
-  useEffect(() => {
-    if (enableTTS && isQuizActive && !isAutoSelectingRef.current) {
-      const textToSpeak = optionsOff 
-        ? `${currentQuestion.question}` 
-        : `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
-
-      const triggerTTS = async () => {
-        const audioData = await speakText(textToSpeak);
-        if (audioData) {
-          SoundEngine.playBase64Audio(audioData);
-        }
-
-        // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
-        const correctLetter = currentQuestion.correctAnswer;
-        const correctText = currentQuestion[`option${correctLetter}`];
-        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
-
-        if (currentIndex < questions.length - 1) {
-          const nextQ = questions[currentIndex + 1];
-          await prefetchTTS(optionsOff 
-            ? `${nextQ.question}` 
-            : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`
-          );
-        }
-      };
-
-      triggerTTS();
-    }
-
-    return () => {
-      // ONLY stop TTS when navigating manually — never during answer reveal
-      if (!isAutoSelectingRef.current) SoundEngine.stopTTS();
-    };
-  }, [currentIndex, isQuizActive, enableTTS, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD, optionsOff]);
-
-  // TTS Answer Effect
-  // Answer TTS — ONLY for manual option selection (user clicked), NOT auto-reveal
-  useEffect(() => {
-    if (enableTTS && isQuizActive && selectedOption && !isAutoSelectingRef.current && hasReadAnswerRef.current !== currentIndex) {
-      hasReadAnswerRef.current = currentIndex;
-      const correctLetter = currentQuestion.correctAnswer;
-      const correctText = currentQuestion[`option${correctLetter}`];
-      const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
-
-      const triggerTTS = async () => {
-        // Small delay to let the "Success/Error" sound play first if enabled
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const audioData = await speakText(textToSpeak);
-        if (audioData) {
-          SoundEngine.playBase64Audio(audioData);
-        }
-      };
-
-      triggerTTS();
-    }
-  }, [selectedOption, enableTTS, isQuizActive, currentQuestion, currentIndex]);
-
   const prepareFinalAnswers = useCallback(() => {
     if (recordSession) stopRecording();
     return questions.map((q, idx) => {
@@ -148,6 +93,107 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     });
   }, [questions, userChoices, recordSession, stopRecording]);
 
+  // TTS Question Effect
+  useEffect(() => {
+    if (enableTTS && isQuizActive && slideType === 'QUESTION' && !isAutoSelectingRef.current) {
+      const textToSpeak = optionsOff 
+        ? `${currentQuestion.question}` 
+        : `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
+
+      const triggerTTS = async () => {
+        const audioData = await speakText(textToSpeak, voiceId);
+        if (audioData) {
+          SoundEngine.playBase64Audio(audioData);
+        }
+
+        // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
+        const correctLetter = currentQuestion.correctAnswer;
+        const correctText = currentQuestion[`option${correctLetter}`];
+        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId);
+
+        if (currentIndex < questions.length - 1) {
+          const nextQ = questions[currentIndex + 1];
+          await prefetchTTS(optionsOff 
+            ? `${nextQ.question}` 
+            : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`,
+            voiceId
+          );
+        }
+      };
+
+      triggerTTS();
+    }
+
+    return () => {
+      // ONLY stop TTS when navigating manually — never during answer reveal
+      if (!isAutoSelectingRef.current) SoundEngine.stopTTS();
+    };
+  }, [currentIndex, isQuizActive, slideType, enableTTS, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD, optionsOff, voiceId]);
+
+  // INTRO Slide Effect
+  useEffect(() => {
+    if (isQuizActive && slideType === 'INTRO') {
+      const runIntro = async () => {
+        if (enableTTS) {
+          const introAudioData = await speakText(`Welcome to ${testTitle}`, voiceId);
+          if (introAudioData) SoundEngine.playBase64Audio(introAudioData);
+          
+          // Prefetch Q1
+          const firstQ = questions[0];
+          const questionText = optionsOff ? `${firstQ.question}` : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+          prefetchTTS(questionText, voiceId);
+        }
+        
+        const words = testTitle.split(/\s+/).length;
+        const durationMs = Math.max(3000, words * 400 + 1500); // Dynamic wait based on title length
+        
+        setTimeout(() => {
+           setSlideType('QUESTION');
+        }, durationMs);
+      };
+      runIntro();
+    }
+  }, [isQuizActive, slideType, testTitle, enableTTS, voiceId, questions, optionsOff]);
+
+  // OUTRO Slide Effect
+  useEffect(() => {
+    if (isQuizActive && slideType === 'OUTRO') {
+      const runOutro = async () => {
+        const outroText = "Thanks for playing! How many did you get right? Let us know in the comments!";
+        if (enableTTS) {
+          const outroAudioData = await speakText(outroText, voiceId);
+          if (outroAudioData) SoundEngine.playBase64Audio(outroAudioData);
+        }
+        setTimeout(() => {
+           onFinish(prepareFinalAnswers());
+        }, 5000); 
+      };
+      runOutro();
+    }
+  }, [isQuizActive, slideType, enableTTS, voiceId, onFinish, prepareFinalAnswers]);
+
+  // TTS Answer Effect
+  // Answer TTS — ONLY for manual option selection (user clicked), NOT auto-reveal
+  useEffect(() => {
+    if (enableTTS && isQuizActive && slideType === 'QUESTION' && selectedOption && !isAutoSelectingRef.current && hasReadAnswerRef.current !== currentIndex) {
+      hasReadAnswerRef.current = currentIndex;
+      const correctLetter = currentQuestion.correctAnswer;
+      const correctText = currentQuestion[`option${correctLetter}`];
+      const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
+
+      const triggerTTS = async () => {
+        // Small delay to let the "Success/Error" sound play first if enabled
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const audioData = await speakText(textToSpeak, voiceId);
+        if (audioData) {
+          SoundEngine.playBase64Audio(audioData);
+        }
+      };
+
+      triggerTTS();
+    }
+  }, [selectedOption, enableTTS, isQuizActive, slideType, currentQuestion, currentIndex, voiceId]);
+
   const handleNext = useCallback(() => {
     if (autoTransitionRef.current) {
       clearTimeout(autoTransitionRef.current);
@@ -159,9 +205,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(prev => prev + 1);
     } else {
-      onFinish(prepareFinalAnswers());
+      if (addIntroOutro && slideType !== 'OUTRO') {
+         setSlideType('OUTRO');
+      } else {
+         onFinish(prepareFinalAnswers());
+      }
     }
-  }, [currentIndex, questions.length, onFinish, prepareFinalAnswers]);
+  }, [currentIndex, questions.length, onFinish, prepareFinalAnswers, addIntroOutro, slideType]);
 
   const handleOptionSelect = useCallback((key: 'A' | 'B' | 'C' | 'D') => {
     if (!isAutoSelectingRef.current) SoundEngine.stopTTS(); // Only stop TTS on manual select
@@ -177,18 +227,22 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const handleStart = async () => {
     if (enableSound || enableTTS) SoundEngine.init();
 
-    // Eagerly prefetch first question TTS so it's cached and plays instantly
+    // Eagerly prefetch first slide TTS
     if (enableTTS) {
-      const firstQ = questions[0];
-      const questionText = optionsOff 
-        ? `${firstQ.question}` 
-        : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-      const correctLetter = firstQ.correctAnswer;
-      const correctText = firstQ[`option${correctLetter}`];
-      // Sequentially prefetch to avoid concurrency limits
-      prefetchTTS(questionText).then(() => {
-        prefetchTTS(`answer is option ${correctLetter} ${correctText}`);
-      });
+       if (addIntroOutro) {
+          prefetchTTS(`Welcome to ${testTitle}`, voiceId);
+       } else {
+          const firstQ = questions[0];
+          const questionText = optionsOff 
+            ? `${firstQ.question}` 
+            : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+          const correctLetter = firstQ.correctAnswer;
+          const correctText = firstQ[`option${correctLetter}`];
+          // Sequentially prefetch to avoid concurrency limits
+          prefetchTTS(questionText, voiceId).then(() => {
+            prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId);
+          });
+       }
     }
 
     if (recordSession) {
@@ -271,7 +325,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           const correctLetter = currentQuestion.correctAnswer;
           const correctText = currentQuestion[`option${correctLetter}`];
           const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
-          speakText(textToSpeak).then(audioData => {
+          speakText(textToSpeak, voiceId).then(audioData => {
             if (audioData) SoundEngine.playBase64Audio(audioData);
           });
         }
@@ -372,120 +426,136 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               {/* Internal Content */}
               <div className="flex flex-col h-full relative z-10 px-6 py-8 lg:px-16 lg:py-10">
               
-                {/* Question Number Badge (Absolute Top-Left) */}
-                {hasStarted && (
-                  <div className="absolute top-6 left-6 lg:top-10 lg:left-10 z-30 transition-all duration-700 animate-fade-in">
-                    <div 
-                      className="px-4 py-2 rounded-2xl font-black text-xs lg:text-sm tracking-[0.2em] uppercase backdrop-blur-lg border"
-                      style={{ 
-                        backgroundColor: `${theme.accent}15`, 
-                        color: theme.accent,
-                        borderColor: `${theme.accent}30`,
-                        boxShadow: `0 4px 20px -5px ${theme.accent}40`
-                      }}
-                    >
-                      Question {String(currentIndex + 1).padStart(2, '0')}
-                    </div>
+                {slideType === 'INTRO' && (
+                  <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-700 w-full px-12`}>
+                      <h2 className="text-6xl lg:text-8xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl animate-in zoom-in duration-700">
+                         {testTitle}
+                      </h2>
+                      <div className="w-24 h-1 bg-white/20 mt-12 rounded-full overflow-hidden">
+                         <div className="w-full h-full bg-white/80 animate-[shimmer_2s_infinite]"></div>
+                      </div>
                   </div>
                 )}
 
-                {/* Question Area */}
-                <div className={`flex-grow flex ${withPicture ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
-
-                  <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture ? 'flex-1' : ''}`}>
-                    <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
-                      <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
-                    </h2>
+                {slideType === 'OUTRO' && (
+                  <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-700 w-full px-12`}>
+                      <h2 className="text-5xl lg:text-7xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl mb-8 animate-in slide-in-from-bottom-8 duration-700">
+                         Thanks for playing!
+                      </h2>
+                      <p className="text-3xl lg:text-5xl font-bold text-center tracking-wide animate-in fade-in duration-1000 delay-300" style={{ color: theme.accent }}>
+                         How many did you get right? Let us know in the comments!
+                      </p>
                   </div>
+                )}
 
-                  {withPicture && (
-                    <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
-                      {currentQuestion.imageUrl && (
-                        <img
-                          src={currentQuestion.imageUrl}
-                          alt="Visual Context"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          onError={(e) => { 
-                            (e.target as HTMLImageElement).style.display = 'none'; 
-                            e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; 
-                          }}
-                        />
-                      )}
+                {slideType === 'QUESTION' && (
+                  <>
+                    <div className="absolute top-6 left-6 lg:top-10 lg:left-10 z-30 transition-all duration-700 animate-fade-in">
+                      <div 
+                        className="px-4 py-2 rounded-2xl font-black text-xs lg:text-sm tracking-[0.2em] uppercase backdrop-blur-lg border"
+                        style={{ 
+                          backgroundColor: `${theme.accent}15`, 
+                          color: theme.accent,
+                          borderColor: `${theme.accent}30`,
+                          boxShadow: `0 4px 20px -5px ${theme.accent}40`
+                        }}
+                      >
+                        Question {String(currentIndex + 1).padStart(2, '0')}
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Options Grid - OPTIMIZED FOR 16:9 */}
-                <div className="flex-shrink-0 flex flex-col justify-end">
-                  <div className={`grid gap-5 lg:gap-8 transition-all duration-1000 delay-300 grid-cols-1 md:grid-cols-2
-                    ${!hasStarted ? 'opacity-0 translate-y-12' : 'opacity-100 translate-y-0'}`}>
+                    <div className={`flex-grow flex ${withPicture ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
+                      <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture ? 'flex-1' : ''}`}>
+                        <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
+                          <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
+                        </h2>
+                      </div>
 
-                    {(['A', 'B', 'C', 'D'] as const).map((key) => {
-                      const isCorrect = isAutoSelecting && key === currentQuestion.correctAnswer;
-                      const isWrong = isAutoSelecting && selectedOption === key && key !== currentQuestion.correctAnswer;
-                      const isSelected = selectedOption === key;
-
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => isQuizActive && !isAutomatic && !isAutoSelecting && handleOptionSelect(key)}
-                          disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-                          className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg min-h-[7rem] lg:min-h-[9rem] py-4
-                            ${isSelected && !isAutoSelecting ? 'scale-[1.02] z-20 bg-slate-100' :
-                              isCorrect ? 'scale-[1.05] z-30 bg-emerald-500 border-emerald-400 text-white' :
-                                isWrong ? 'bg-rose-500 border-rose-400 opacity-80 text-white' : 'bg-white border-transparent hover:border-white/50'} 
-                            ${isSelected && !isAutoSelecting ? '' : !isCorrect && !isWrong ? '' : ''}`}
-                          style={isSelected && !isAutoSelecting ? { borderColor: theme.accent } : {}}
-                        >
-                          {/* Option Label (A/B/C/D) */}
-                          <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 w-16 h-16 lg:w-20 lg:h-20 mr-6 lg:mr-8 text-3xl lg:text-5xl lg:rounded-[1.5rem]
-                             ${isCorrect ? 'bg-white text-emerald-600 rotate-[360deg]' :
-                              isWrong ? 'bg-white text-rose-500' :
-                                isSelected ? 'bg-[var(--theme-bg)] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
-                            style={isSelected && !isCorrect ? { backgroundColor: theme.accent } : {}}
-                          >
-                            {key}
-                          </div>
-
-                          {/* Option Text */}
-                          <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.6] text-2xl lg:text-4xl
-                             ${isCorrect || isWrong ? 'text-white' : 'text-slate-900'}`}>
-                            {currentQuestion[`option${key}`]}
-                          </span>
-
-                          {(isCorrect || (isSelected && !isAutoSelecting)) && (
-                            <div className="ml-4 animate-in zoom-in duration-500 shrink-0">
-                              <div className="rounded-full flex items-center justify-center w-10 h-10"
-                                style={{ backgroundColor: isCorrect ? 'white' : theme.accent, color: isCorrect ? '#10B981' : 'white' }}
-                              >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>
-                              </div>
-                            </div>
+                      {withPicture && (
+                        <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
+                          {currentQuestion.imageUrl && (
+                            <img
+                              src={currentQuestion.imageUrl}
+                              alt="Visual Context"
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              onError={(e) => { 
+                                (e.target as HTMLImageElement).style.display = 'none'; 
+                                e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; 
+                              }}
+                            />
                           )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Timer Progress Bar */}
-                  {(isTimed || isAutomatic) && hasStarted && (
-                    <div className="mt-6 lg:mt-8 w-full h-3 lg:h-4 bg-white/10 rounded-full overflow-hidden relative">
-                      {isQuizActive && !isAutoSelecting ? (
-                        <div
-                          key={currentIndex}
-                          className="h-full bg-[#FFD700] origin-left rounded-full"
-                          style={{
-                            width: '0%',
-                            animation: `grow ${timerDuration}s linear forwards`
-                          }}
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-transparent" />
+                        </div>
                       )}
                     </div>
-                  )}
 
-                </div>
+                    <div className="flex-shrink-0 flex flex-col justify-end">
+                      <div className={`grid gap-5 lg:gap-8 transition-all duration-1000 delay-300 grid-cols-1 md:grid-cols-2
+                        ${!hasStarted ? 'opacity-0 translate-y-12' : 'opacity-100 translate-y-0'}`}>
+
+                        {(['A', 'B', 'C', 'D'] as const).map((key) => {
+                          const isCorrect = isAutoSelecting && key === currentQuestion.correctAnswer;
+                          const isWrong = isAutoSelecting && selectedOption === key && key !== currentQuestion.correctAnswer;
+                          const isSelected = selectedOption === key;
+
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => !isAutomatic && !isAutoSelecting && handleOptionSelect(key)}
+                              disabled={!isQuizActive || isAutomatic || isAutoSelecting}
+                              className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg min-h-[7rem] lg:min-h-[9rem] py-4
+                                ${isSelected && !isAutoSelecting ? 'scale-[1.02] z-20 bg-slate-100' :
+                                  isCorrect ? 'scale-[1.05] z-30 bg-emerald-500 border-emerald-400 text-white' :
+                                    isWrong ? 'bg-rose-500 border-rose-400 opacity-80 text-white' : 'bg-white border-transparent hover:border-white/50'} 
+                                ${isSelected && !isAutoSelecting ? '' : !isCorrect && !isWrong ? '' : ''}`}
+                              style={isSelected && !isAutoSelecting ? { borderColor: theme.accent } : {}}
+                            >
+                              <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 w-16 h-16 lg:w-20 lg:h-20 mr-6 lg:mr-8 text-3xl lg:text-5xl lg:rounded-[1.5rem]
+                                 ${isCorrect ? 'bg-white text-emerald-600 rotate-[360deg]' :
+                                  isWrong ? 'bg-white text-rose-500' :
+                                    isSelected ? 'bg-[var(--theme-bg)] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
+                                style={isSelected && !isCorrect ? { backgroundColor: theme.accent } : {}}
+                              >
+                                {key}
+                              </div>
+
+                              <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.6] text-2xl lg:text-4xl
+                                 ${isCorrect || isWrong ? 'text-white' : 'text-slate-900'}`}>
+                                {currentQuestion[`option${key}`]}
+                              </span>
+
+                              {(isCorrect || (isSelected && !isAutoSelecting)) && (
+                                <div className="ml-4 animate-in zoom-in duration-500 shrink-0">
+                                  <div className="rounded-full flex items-center justify-center w-10 h-10"
+                                    style={{ backgroundColor: isCorrect ? 'white' : theme.accent, color: isCorrect ? '#10B981' : 'white' }}
+                                  >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>
+                                  </div>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {(isTimed || isAutomatic) && hasStarted && (
+                        <div className="mt-6 lg:mt-8 w-full h-3 lg:h-4 bg-white/10 rounded-full overflow-hidden relative">
+                          {isQuizActive && slideType === 'QUESTION' && !isAutoSelecting ? (
+                            <div
+                              key={currentIndex}
+                              className="h-full bg-[#FFD700] origin-left rounded-full"
+                              style={{
+                                width: '0%',
+                                animation: `grow ${timerDuration}s linear forwards`
+                              }}
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-transparent" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -496,7 +566,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           {/* Left: Status & Timer */}
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-              {(isTimed || isAutomatic) && (
+              {(isTimed || isAutomatic) && slideType === 'QUESTION' && (
                 <div className="w-12 h-12">
                   <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && (!isAutoSelecting || isAutomatic)} onTick={handleTick} />
                 </div>
@@ -504,7 +574,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               <div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Engine Status</p>
                 <p className="text-lg font-black text-white italic tracking-tight leading-none" style={{ color: isAutoSelecting ? theme.accent : 'white' }}>
-                  {isAutoSelecting ? 'Revealing...' : (isQuizActive ? 'Live Session' : 'Standby')}
+                  {slideType === 'INTRO' ? 'Title Sequence' : slideType === 'OUTRO' ? 'Ending Sequence' : isAutoSelecting ? 'Revealing...' : (isQuizActive ? 'Live Session' : 'Standby')}
                 </p>
               </div>
             </div>
@@ -513,7 +583,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               <h1 className="text-lg font-black text-white tracking-tighter truncate max-w-[300px]">{testTitle}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`w-2 h-2 rounded-full ${isQuizActive ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`}></span>
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Slide {currentIndex + 1} / {questions.length}</p>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+                  {slideType === 'INTRO' ? 'CINEMATIC INTRO' : slideType === 'OUTRO' ? 'CINEMATIC OUTRO' : `Slide ${currentIndex + 1} / ${questions.length}`}
+                </p>
               </div>
             </div>
           </div>

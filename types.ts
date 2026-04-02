@@ -46,4 +46,6 @@ export interface QuizConfig {
   enableTTS: boolean;
   withPicture: boolean;
   optionsOff: boolean;
+  voiceId: string;
+  addIntroOutro: boolean;
 }
