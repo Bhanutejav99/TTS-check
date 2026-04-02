@@ -434,7 +434,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               )}
 
               {/* Internal Content */}
-              <div className="flex flex-col h-full relative z-10 px-6 py-8 lg:px-16 lg:py-10">
+              <div className={`flex flex-col h-full relative z-10 ${isVertical ? 'px-4 py-8' : 'px-6 py-8 lg:px-16 lg:py-10'}`}>
               
                 {slideType === 'INTRO' && (
                   <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-700 w-full px-12`}>
@@ -470,7 +470,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                           boxShadow: `0 4px 20px -5px ${theme.accent}40`
                         }}
                       >
-                        Question {String(currentIndex + 1).padStart(2, '0')}
+                        {isVertical ? String(currentIndex + 1).padStart(2, '0') : `Question ${String(currentIndex + 1).padStart(2, '0')}`}
                       </div>
                     </div>
 
@@ -478,9 +478,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       
                       {/* Image Block MUST move before Text if vertical */}
                       {withPicture && isVertical && (
-                         <div className={`relative shrink-0 w-full max-w-[14rem] lg:max-w-[16rem] h-[25vh] max-h-[160px] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
+                         <div className={`relative shrink-0 w-[85%] max-w-[20rem] lg:max-w-[24rem] aspect-[4/3] max-h-[30vh] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-contain p-2 transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
                           )}
                         </div>
                       )}
