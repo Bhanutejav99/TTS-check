@@ -35,6 +35,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [testTitle, setTestTitle] = useState('');
   const [isTestingTTS, setIsTestingTTS] = useState(false);
   const [withPicture, setWithPicture] = useState(false);
+  const [optionsOff, setOptionsOff] = useState(false);
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
   const [pastedText, setPastedText] = useState('');
@@ -103,7 +104,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       themeColor,
       enableSound,
       enableTTS,
-      withPicture
+      withPicture,
+      optionsOff
     });
   };
 
@@ -192,6 +194,16 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                   </div>
                   <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
                     <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-full shadow-inner">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Skip Options TTS</span>
+                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Save Credits</span>
+                  </div>
+                  <button onClick={() => setOptionsOff(!optionsOff)} className={`w-12 h-6 rounded-full relative transition-colors border ${optionsOff ? 'bg-rose-500/20 border-rose-500/30' : 'bg-transparent border-white/20'}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${optionsOff ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-rose-400' : 'left-0.5 bg-white/50'}`} />
                   </button>
                 </div>
 

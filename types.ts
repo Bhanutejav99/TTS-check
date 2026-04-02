@@ -37,4 +37,5 @@ export interface QuizConfig {
   enableSound: boolean;
   enableTTS: boolean;
   withPicture: boolean;
+  optionsOff: boolean;
 }

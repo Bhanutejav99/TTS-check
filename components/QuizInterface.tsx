@@ -27,8 +27,10 @@ const getAnswerReadTime = (q: Question): number => {
   return Math.max(1, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // pure read time
 };
 
-const calculateDynamicTimer = (q: Question): number => {
-  const fullTTSText = `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
+const calculateDynamicTimer = (q: Question, optionsOff: boolean): number => {
+  const fullTTSText = optionsOff 
+    ? `${q.question}` 
+    : `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
   const questionReadTime = Math.ceil(wordCount / TTS_WORDS_PER_SECOND); // Force integer
   const answerReadTime = getAnswerReadTime(q);
@@ -53,7 +55,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS, withPicture } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS, withPicture, optionsOff } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -78,7 +80,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // TTS Question Effect
   useEffect(() => {
     if (enableTTS && isQuizActive && !isAutoSelectingRef.current) {
-      const textToSpeak = `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
+      const textToSpeak = optionsOff 
+        ? `${currentQuestion.question}` 
+        : `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
         const audioData = await speakText(textToSpeak);
@@ -93,7 +97,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
         if (currentIndex < questions.length - 1) {
           const nextQ = questions[currentIndex + 1];
-          await prefetchTTS(`${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`);
+          await prefetchTTS(optionsOff 
+            ? `${nextQ.question}` 
+            : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`
+          );
         }
       };
 
@@ -104,7 +111,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       // ONLY stop TTS when navigating manually — never during answer reveal
       if (!isAutoSelectingRef.current) SoundEngine.stopTTS();
     };
-  }, [currentIndex, isQuizActive, enableTTS, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD]);
+  }, [currentIndex, isQuizActive, enableTTS, currentQuestion.question, currentQuestion.optionA, currentQuestion.optionB, currentQuestion.optionC, currentQuestion.optionD, optionsOff]);
 
   // TTS Answer Effect
   // Answer TTS — ONLY for manual option selection (user clicked), NOT auto-reveal
@@ -173,7 +180,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     // Eagerly prefetch first question TTS so it's cached and plays instantly
     if (enableTTS) {
       const firstQ = questions[0];
-      const questionText = `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+      const questionText = optionsOff 
+        ? `${firstQ.question}` 
+        : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
       const correctLetter = firstQ.correctAnswer;
       const correctText = firstQ[`option${correctLetter}`];
       // Sequentially prefetch to avoid concurrency limits
@@ -271,7 +280,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   };
 
   const timerDuration = (enableTTS && isAutomatic)
-    ? calculateDynamicTimer(currentQuestion)
+    ? calculateDynamicTimer(currentQuestion, optionsOff)
     : isAutomatic
       ? (autoTimeLimit - 3)
       : (currentQuestion.timeLimit || 20);
