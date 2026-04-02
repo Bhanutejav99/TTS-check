@@ -352,17 +352,18 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   const getQuestionFontSize = () => {
     const len = currentQuestion.question.length;
     const hasImage = withPicture;
-    const baseClasses = `tracking-wide text-center transition-all duration-300 ${isVertical ? 'leading-[2.0]' : 'leading-[3.5]'}`;
+    const baseClasses = `tracking-wide text-center transition-all duration-300 ${isVertical ? 'leading-[1.2]' : 'leading-[3.5]'}`;
 
     if (isVertical) {
       if (hasImage) {
-        if (len < 60) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
-        if (len < 100) return `text-2xl lg:text-3xl font-black ${baseClasses}`;
-        return `text-xl lg:text-2xl font-bold ${baseClasses}`;
+        if (len < 60) return `text-2xl lg:text-3xl font-black ${baseClasses}`;
+        if (len < 100) return `text-xl lg:text-2xl font-black ${baseClasses}`;
+        return `text-lg lg:text-xl font-bold ${baseClasses}`;
       } else {
-        if (len < 60) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
-        if (len < 120) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
-        return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+        if (len < 40) return `text-4xl lg:text-5xl font-black ${baseClasses}`;
+        if (len < 80) return `text-3xl lg:text-4xl font-black ${baseClasses}`;
+        if (len < 140) return `text-2xl lg:text-3xl font-bold ${baseClasses}`;
+        return `text-xl lg:text-2xl font-bold ${baseClasses}`;
       }
     }
 
@@ -477,9 +478,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       
                       {/* Image Block MUST move before Text if vertical */}
                       {withPicture && isVertical && (
-                         <div className={`relative shrink-0 w-full max-w-[16rem] lg:max-w-[18rem] max-h-[30vh] aspect-square flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
+                         <div className={`relative shrink-0 w-full max-w-[14rem] lg:max-w-[16rem] h-[25vh] max-h-[160px] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 w-full max-w-[16rem] lg:max-w-[18rem] max-h-[30vh] flex justify-center items-center aspect-square transition-all duration-700 mx-auto'; }} />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className="w-full h-full object-contain p-2 transition-transform duration-700 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
                           )}
                         </div>
                       )}
@@ -514,14 +515,14 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                               key={key}
                               onClick={() => !isAutomatic && !isAutoSelecting && handleOptionSelect(key)}
                               disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-                              className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg ${isVertical ? 'min-h-[4.5rem] lg:min-h-[6rem] py-2' : 'min-h-[7rem] lg:min-h-[9rem] py-4'}
+                              className={`group relative flex items-center px-4 lg:px-6 rounded-[1.2rem] lg:rounded-[2rem] text-left transition-all border-[3px] shadow-lg ${isVertical ? 'min-h-[3.5rem] lg:min-h-[4.5rem] py-2' : 'min-h-[7rem] lg:min-h-[9rem] py-4'}
                                 ${isSelected && !isAutoSelecting ? 'scale-[1.02] z-20 bg-slate-100' :
                                   isCorrect ? 'scale-[1.05] z-30 bg-emerald-500 border-emerald-400 text-white' :
                                     isWrong ? 'bg-rose-500 border-rose-400 opacity-80 text-white' : 'bg-white border-transparent hover:border-white/50'} 
                                 ${isSelected && !isAutoSelecting ? '' : !isCorrect && !isWrong ? '' : ''}`}
                               style={isSelected && !isAutoSelecting ? { borderColor: theme.accent } : {}}
                             >
-                              <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 mr-4 lg:mr-8 ${isVertical ? 'w-12 h-12 lg:w-16 lg:h-16 text-2xl lg:text-3xl' : 'w-16 h-16 lg:w-20 lg:h-20 text-3xl lg:text-5xl lg:rounded-[1.5rem]'}
+                              <div className={`shrink-0 flex items-center justify-center rounded-[1rem] font-black transition-all duration-500 mr-3 lg:mr-6 ${isVertical ? 'w-10 h-10 lg:w-12 lg:h-12 text-xl' : 'w-16 h-16 lg:w-20 lg:h-20 text-3xl lg:text-5xl lg:rounded-[1.5rem]'}
                                  ${isCorrect ? 'bg-white text-emerald-600 rotate-[360deg]' :
                                   isWrong ? 'bg-white text-rose-500' :
                                     isSelected ? 'bg-[var(--theme-bg)] text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600'}`}
@@ -530,7 +531,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                                 {key}
                               </div>
 
-                              <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.4] ${isVertical ? 'text-xl lg:text-2xl md:text-3xl' : 'text-2xl lg:text-4xl'}
+                              <span className={`font-bold tracking-wide transition-all duration-300 flex-grow leading-[1.2] ${isVertical ? 'text-lg lg:text-xl' : 'text-2xl lg:text-4xl'}
                                  ${isCorrect || isWrong ? 'text-white' : 'text-slate-900'}`}>
                                 {currentQuestion[`option${key}`]}
                               </span>
