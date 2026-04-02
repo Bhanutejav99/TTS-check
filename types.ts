@@ -36,4 +36,5 @@ export interface QuizConfig {
   themeColor: string;
   enableSound: boolean;
   enableTTS: boolean;
+  withPicture: boolean;
 }

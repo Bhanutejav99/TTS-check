@@ -31,10 +31,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#04192c]">
-      {/* Header hidden during recording phase if desired, but keeping minimal for now */}
-      {phase !== AppPhase.QUIZ && (
-        <header className="bg-[#04192c]/80 backdrop-blur-xl border-b border-white/5 py-5 px-8 flex justify-between items-center sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col bg-[#0E1521]">
+      {/* Header hidden during upload phase to let the new landing page shine */}
+      {phase !== AppPhase.UPLOAD && phase !== AppPhase.QUIZ && (
+        <header className="bg-[#141C2B]/80 backdrop-blur-xl border-b border-white/5 py-4 px-8 flex justify-between items-center sticky top-0 z-50">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#04192c] font-bold text-lg">M</div>
             <div>
@@ -42,7 +42,7 @@ const App: React.FC = () => {
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Creator Studio</span>
             </div>
           </div>
-          
+
           <nav className="hidden sm:flex items-center gap-6">
             {[
               { phase: AppPhase.UPLOAD, label: 'Setup' },
@@ -63,9 +63,9 @@ const App: React.FC = () => {
       <main className="flex-grow flex flex-col">
         {phase === AppPhase.UPLOAD && <CSVUploader onQuestionsLoaded={handleStartQuiz} />}
         {phase === AppPhase.QUIZ && quizConfig && (
-          <QuizInterface 
-            questions={questions} 
-            config={quizConfig} 
+          <QuizInterface
+            questions={questions}
+            config={quizConfig}
             onFinish={handleFinishQuiz}
             onExit={handleRestart}
           />
@@ -73,9 +73,9 @@ const App: React.FC = () => {
         {phase === AppPhase.RESULT && <ResultView questions={questions} answers={finalAnswers} onRestart={handleRestart} />}
       </main>
 
-      {phase !== AppPhase.QUIZ && (
-        <footer className="py-10 px-8 flex justify-between items-center border-t border-white/5 bg-[#04192c]">
-          <p className="text-[11px] font-medium text-white/30 uppercase tracking-widest">Creator Engine &copy; 2025</p>
+      {phase !== AppPhase.UPLOAD && phase !== AppPhase.QUIZ && (
+        <footer className="py-6 px-8 flex justify-between items-center border-t border-white/5 bg-[#0E1521]">
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Creator Engine &copy; 2026</p>
         </footer>
       )}
     </div>

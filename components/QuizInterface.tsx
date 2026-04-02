@@ -53,7 +53,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, themeColor, enableSound, enableTTS, withPicture } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -286,7 +286,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // --- TYPOGRAPHY SYSTEM v2.0 (HERO SCALE - LANDSCAPE ONLY) ---
   const getQuestionFontSize = () => {
     const len = currentQuestion.question.length;
-    const hasImage = !!currentQuestion.imageUrl;
+    const hasImage = withPicture && !!currentQuestion.imageUrl;
     // Increased leading from 2.5 to 3.5 for maximum line spacing
     // Changed text-left to text-center
     const baseClasses = 'leading-[3.5] tracking-wide text-center transition-all duration-300';
@@ -379,10 +379,16 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                 )}
 
                 {/* Question Area */}
-                <div className={`flex-grow flex flex-col justify-center min-h-0 mb-6 lg:mb-8 transition-all ${currentQuestion.imageUrl ? 'gap-4 lg:gap-6' : ''}`}>
+                <div className={`flex-grow flex ${withPicture && currentQuestion.imageUrl ? 'flex-row items-center gap-8 lg:gap-12' : 'flex-col justify-center'} min-h-0 mb-6 lg:mb-8 transition-all`}>
 
-                  {currentQuestion.imageUrl && (
-                    <div className="relative shrink-0 overflow-hidden rounded-2xl shadow-sm border border-white/20 bg-black/40 group h-64 aspect-video">
+                  <div className={`w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center ${withPicture && currentQuestion.imageUrl ? 'flex-1' : ''}`}>
+                    <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
+                      <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
+                    </h2>
+                  </div>
+
+                  {withPicture && currentQuestion.imageUrl && (
+                    <div className="relative shrink-0 overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700">
                       <img
                         src={currentQuestion.imageUrl}
                         alt="Visual Context"
@@ -391,12 +397,6 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       />
                     </div>
                   )}
-
-                  <div className="w-full max-h-full overflow-y-auto no-scrollbar py-6 lg:py-8 flex flex-col justify-center">
-                    <h2 className={`${getQuestionFontSize()} text-white transition-all duration-700 ${!hasStarted ? 'blur-2xl opacity-0' : 'blur-0 opacity-100'}`}>
-                      <span dangerouslySetInnerHTML={{ __html: currentQuestion.question }} />
-                    </h2>
-                  </div>
                 </div>
 
                 {/* Options Grid - OPTIMIZED FOR 16:9 */}
