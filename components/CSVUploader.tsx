@@ -338,8 +338,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
           </div>
 
           {/* RIGHT COLUMN: DATA & LAUNCH */}
-          <div className="flex flex-col h-full space-y-10">
-            <div className="flex-grow space-y-5">
+          <div className="flex flex-col h-full space-y-8">
+            <div className="flex flex-col space-y-5">
               <div className="flex items-center gap-3 mb-2">
                 <span className="w-8 h-8 rounded-xl bg-emerald-400 text-[#0E1521] flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(52,211,153,0.3)]">04</span>
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Data Ingestion</span>
@@ -386,6 +386,68 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* LIVE PREVIEW MODULE */}
+            <div className="flex-grow flex flex-col justify-end pb-2">
+              <div className="bg-[#1A2333]/50 border border-white/5 rounded-[2rem] p-5 shadow-inner backdrop-blur-sm">
+                 <div className="flex items-center justify-between mb-4">
+                   <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center bg-white/10" style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent }}></div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Output Preview</span>
+                   </div>
+                   <span className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 bg-[#0B1A2C] border border-white/5 rounded-full text-white/40">{isVertical ? 'V/9:16' : 'H/16:9'}</span>
+                 </div>
+                 
+                 <div className="w-full flex items-center justify-center p-4 bg-[#0B1A2C]/50 rounded-[1.5rem] border border-white/5 h-[160px] overflow-hidden shadow-inner">
+                    <div 
+                      className={`relative flex flex-col shadow-[0_10px_20px_rgba(0,0,0,0.5)] rounded-lg overflow-hidden transition-all duration-700 ${isVertical ? 'aspect-[9/16] h-[130px] w-auto border-2' : 'aspect-video w-[200px] border-[3px]'}`}
+                      style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).bg, borderColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).card }}
+                    >
+                      {/* Top Progress Bar */}
+                      <div className="w-full h-1 bg-white/10 shrink-0">
+                         <div className="h-full w-1/3 transition-colors duration-500" style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent }}></div>
+                      </div>
+
+                      <div className={`p-2 flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center justify-center gap-1.5' : 'flex-row items-center justify-center gap-2.5') : 'flex-col items-center justify-center'} transition-all`}>
+                         
+                         {/* Fake Image (Vertical) */}
+                         {withPicture && isVertical && (
+                           <div className="w-4/5 aspect-[4/3] rounded-sm bg-white/10 shrink-0 border border-white/5 shadow-sm"></div>
+                         )}
+
+                         {/* Fake Text */}
+                         <div className={`flex flex-col gap-1 w-full items-center justify-center ${withPicture && !isVertical ? 'flex-1' : ''}`}>
+                            <div className="w-4/5 h-1.5 bg-white/20 rounded-full"></div>
+                            <div className="w-3/5 h-1.5 bg-white/20 rounded-full"></div>
+                         </div>
+
+                         {/* Fake Image (Landscape) */}
+                         {withPicture && !isVertical && (
+                           <div className="w-10 h-10 aspect-square rounded-sm shrink-0 bg-white/10 border border-white/5 shadow-sm"></div>
+                         )}
+
+                      </div>
+
+                      {/* Fake Options */}
+                      <div className={`p-1.5 shrink-0 grid ${isVertical ? 'grid-cols-1 gap-0.5' : 'grid-cols-2 gap-1.5'} w-full transition-all`}>
+                         {[1, 2].map(i => (
+                           <div key={`opt-${i}`} className={`flex items-center gap-1.5 px-1.5 rounded-sm bg-white border border-transparent shadow-sm ${isVertical ? 'h-[12px]' : 'h-[16px]'}`}>
+                             <div className={`shrink-0 rounded-[2px] bg-slate-200 ${isVertical ? 'w-1.5 h-1.5' : 'w-2.5 h-2.5'}`}></div>
+                             <div className="h-0.5 bg-slate-200 rounded-full w-2/3"></div>
+                           </div>
+                         ))}
+                         {[3, 4].map(i => (
+                           <div key={`opt-${i}`} className={`flex items-center gap-1.5 px-1.5 rounded-sm shadow-sm ${isVertical ? 'h-[12px]' : 'h-[16px]'}`} style={{ backgroundColor: i === 3 ? (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent : 'white' }}>
+                             <div className={`shrink-0 rounded-[2px] bg-white ${isVertical ? 'w-1.5 h-1.5' : 'w-2.5 h-2.5'}`}></div>
+                             <div className="h-0.5 bg-white/30 rounded-full w-2/3"></div>
+                           </div>
+                         ))}
+                      </div>
+
+                    </div>
+                 </div>
               </div>
             </div>
 
