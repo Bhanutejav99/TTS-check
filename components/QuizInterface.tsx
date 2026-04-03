@@ -482,6 +482,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                           {currentQuestion.imageUrl && (
                             <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting && !selectedOption ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
                           )}
+                          {/* Title Overlay — visible while image is hidden */}
+                          {config.revealImageWithAnswer && (
+                            <div className={`absolute inset-0 z-10 flex items-center justify-center p-4 transition-all duration-700 pointer-events-none ${!isAutoSelecting && !selectedOption ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
+                              <p className="text-lg lg:text-xl font-black text-white/60 text-center uppercase tracking-[0.15em] leading-tight drop-shadow-lg" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>{testTitle}</p>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -496,6 +502,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                         <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
                             <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting && !selectedOption ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; }} />
+                          )}
+                          {/* Title Overlay — visible while image is hidden */}
+                          {config.revealImageWithAnswer && (
+                            <div className={`absolute inset-0 z-10 flex items-center justify-center p-6 transition-all duration-700 pointer-events-none ${!isAutoSelecting && !selectedOption ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
+                              <p className="text-2xl lg:text-3xl font-black text-white/60 text-center uppercase tracking-[0.15em] leading-tight drop-shadow-lg" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>{testTitle}</p>
+                            </div>
                           )}
                         </div>
                       )}
