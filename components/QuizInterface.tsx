@@ -480,7 +480,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       {withPicture && isVertical && (
                          <div className={`relative shrink-0 w-[85%] max-w-[20rem] lg:max-w-[24rem] aspect-[4/3] max-h-[30vh] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting && !selectedOption ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
                           )}
                         </div>
                       )}
@@ -495,7 +495,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                       {withPicture && !isVertical && (
                         <div className={`relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700 ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2.5rem] shadow-[0_0_30px_rgba(0,0,0,0.5)] border-[4px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
-                            <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; }} />
+                            <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting && !selectedOption ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'relative shrink-0 group w-64 h-64 lg:w-[28rem] lg:h-[28rem] aspect-square transition-all duration-700'; }} />
                           )}
                         </div>
                       )}
