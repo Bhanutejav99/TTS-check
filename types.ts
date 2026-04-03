@@ -49,4 +49,5 @@ export interface QuizConfig {
   voiceId: string;
   addIntroOutro: boolean;
   isVertical: boolean;
+  revealImageWithAnswer?: boolean;
 }

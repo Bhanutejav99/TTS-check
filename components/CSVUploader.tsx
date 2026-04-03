@@ -43,6 +43,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [optionsOff, setOptionsOff] = useState(false);
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
+  const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState('tQHPlZCaA3Oe1X8BqFIp');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
@@ -116,7 +117,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       optionsOff,
       voiceId: selectedVoiceId,
       addIntroOutro,
-      isVertical
+      isVertical,
+      revealImageWithAnswer
     });
   };
 
@@ -306,12 +308,24 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                   <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold uppercase tracking-widest text-white/80">With Picture</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Show Image (1:1)</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Show Image (1:1/4:3)</span>
                     </div>
                     <button onClick={() => setWithPicture(!withPicture)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${withPicture ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${withPicture ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
                     </button>
                   </div>
+
+                  {withPicture && (
+                    <div className="flex items-center justify-between px-6 py-3 bg-white/5 border border-white/10 rounded-[1.2rem] animate-fade-in">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Sync Reveal</span>
+                        <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Image hits with answer</span>
+                      </div>
+                      <button onClick={() => setRevealImageWithAnswer(!revealImageWithAnswer)} className={`w-10 h-5 rounded-full relative transition-colors border shrink-0 ${revealImageWithAnswer ? 'bg-emerald-500/30 border-emerald-500/50' : 'bg-transparent border-white/20'}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${revealImageWithAnswer ? 'left-5 shadow-[0_0_10px_rgba(16,185,129,0.5)] bg-emerald-400' : 'left-0.5 bg-white/50'}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Studio Record Block */}
