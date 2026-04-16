@@ -32,11 +32,11 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         console.log("Gemini TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
 
         let mappedVoiceId = targetVoiceId;
-        let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: `;
+        let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, right away speak the text exactly as provided without any prefix or suffix:\n\n`;
         
         if (targetVoiceId.includes('-IN')) {
             mappedVoiceId = targetVoiceId.split('-')[0];
-            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, just speak the text exactly as provided: `;
+            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, right away speak the text exactly as provided:\n\n`;
         }
 
         // Clean HTML tags and excessive whitespace
