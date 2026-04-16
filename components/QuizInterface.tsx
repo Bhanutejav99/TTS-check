@@ -154,10 +154,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         }
         
         const words = testTitle.split(/\s+/).length;
-        let durationMs = Math.max(3000, words * 400 + 1500); // Dynamic wait based on title length
-        if (ttsProvider === 'gemini') {
-            durationMs = Math.max(durationMs, 8000); // Force intro duration to buffer Gemini Q1
-        }
+        const durationMs = Math.max(3000, words * 400 + 1500); // Standard dynamic wait based on title length
         
         setTimeout(() => {
            setSlideType('QUESTION');
@@ -240,6 +237,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (enableSound || enableTTS) SoundEngine.init();
 
     // Eagerly prefetch first slide TTS
+    let firstTTSPromise: Promise<any> | null = null;
+    
     if (enableTTS) {
        const firstQ = questions[0];
        const questionText = optionsOff 
@@ -251,20 +250,24 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
        if (addIntroOutro) {
           if (ttsProvider === 'gemini') {
-            prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
-            prefetchTTS(questionText, voiceId, ttsProvider); // Parallel Q1 prefetch for Gemini to beat the 3.5s intro timer!
+            firstTTSPromise = Promise.all([
+               prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider),
+               prefetchTTS(questionText, voiceId, ttsProvider) // Parallel Q1 prefetch
+            ]);
           } else {
-            prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
+            firstTTSPromise = prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
             // Q1 logic continues in runIntro for sequential safety
           }
        } else {
           if (ttsProvider === 'gemini') {
-            prefetchTTS(questionText, voiceId, ttsProvider);
-            prefetchTTS(answerText, voiceId, ttsProvider);
+            firstTTSPromise = Promise.all([
+               prefetchTTS(questionText, voiceId, ttsProvider),
+               prefetchTTS(answerText, voiceId, ttsProvider)
+            ]);
           } else {
             // Sequentially prefetch to avoid ElevenLabs concurrency limits
-            prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
-              prefetchTTS(answerText, voiceId, ttsProvider);
+            firstTTSPromise = prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
+              return prefetchTTS(answerText, voiceId, ttsProvider);
             });
           }
        }
@@ -274,11 +277,11 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       const recorder = await setupRecording();
       if (recorder) {
         setIsInitializing(true);
+        if (firstTTSPromise) await firstTTSPromise;
 
         // --- WORLD CLASS START SEQUENCE ---
         // 1. Stabilize — TTS prefetch runs during this wait
-        const stabilizeWait = ttsProvider === 'gemini' ? 8000 : 4000;
-        await wait(stabilizeWait);
+        await wait(4000);
 
         // 2. Reveal UI
         setHasStarted(true);
@@ -304,11 +307,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         setIsInitializing(false);
       }
     } else {
-      if (ttsProvider === 'gemini' && !addIntroOutro && enableTTS) {
-        setIsInitializing(true);
-        await wait(6000); // Give Gemini a headstart
-        setIsInitializing(false);
-      }
+      setIsInitializing(true);
+      if (firstTTSPromise) await firstTTSPromise;
+      setIsInitializing(false);
+      
       setHasStarted(true);
       setIsQuizActive(true);
     }
