@@ -1,5 +1,6 @@
 
 const ttsCache = new Map<string, string>();
+const pendingRequests = new Map<string, Promise<string | null>>();
 
 // ElevenLabs config — Niladri Mahapatra, Eleven v3, stability ~75%
 const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri Mahapatra - Informative Teacher
@@ -25,7 +26,13 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         return ttsCache.get(cacheKey)!;
     }
 
-    try {
+    if (pendingRequests.has(cacheKey)) {
+        console.log("ElevenLabs TTS: Awaiting existing pending request for text");
+        return pendingRequests.get(cacheKey)!;
+    }
+
+    const requestPromise = (async () => {
+        try {
         const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
         console.log("ElevenLabs TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
         if (!apiKey) {
@@ -67,10 +74,16 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         }
 
         return base64Audio || null;
-    } catch (error) {
-        console.error("ElevenLabs TTS: Error generating speech", error);
-        return null;
-    }
+        } catch (error) {
+            console.error("ElevenLabs TTS: Error generating speech", error);
+            return null;
+        }
+    })();
+    
+    pendingRequests.set(cacheKey, requestPromise);
+    const result = await requestPromise;
+    pendingRequests.delete(cacheKey);
+    return result;
 };
 
 export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {

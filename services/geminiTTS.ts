@@ -1,4 +1,5 @@
 const ttsCache = new Map<string, string>();
+const pendingRequests = new Map<string, Promise<string | null>>();
 
 // Gemini TTS config
 const VOICE_ID = 'Zephyr'; // Default Gemini voice
@@ -13,7 +14,13 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         return ttsCache.get(cacheKey)!;
     }
 
-    try {
+    if (pendingRequests.has(cacheKey)) {
+        console.log("Gemini TTS: Awaiting existing pending request for text");
+        return pendingRequests.get(cacheKey)!;
+    }
+
+    const requestPromise = (async () => {
+        try {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         console.log("Gemini TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
         if (!apiKey) {
@@ -25,11 +32,11 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         console.log("Gemini TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
 
         let mappedVoiceId = targetVoiceId;
-        let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: \n`;
+        let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: `;
         
         if (targetVoiceId.includes('-IN')) {
             mappedVoiceId = targetVoiceId.split('-')[0];
-            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, just speak the text exactly as provided: \n`;
+            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, just speak the text exactly as provided: `;
         }
 
         // Clean HTML tags and excessive whitespace
@@ -79,10 +86,16 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         }
 
         return base64Audio || null;
-    } catch (error) {
-        console.error("Gemini TTS: Error generating speech", error);
-        return null;
-    }
+        } catch (error) {
+            console.error("Gemini TTS: Error generating speech", error);
+            return null;
+        }
+    })();
+    
+    pendingRequests.set(cacheKey, requestPromise);
+    const result = await requestPromise;
+    pendingRequests.delete(cacheKey);
+    return result;
 };
 
 export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {
