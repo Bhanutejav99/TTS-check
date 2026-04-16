@@ -4,7 +4,7 @@ import { Question, UserAnswer, QuizConfig } from '../types.ts';
 import CircularTimer from './CircularTimer.tsx';
 import { SoundEngine } from '../utils/SoundEngine.ts';
 import { useScreenRecorder } from '../hooks/useScreenRecorder.ts';
-import { speakText, prefetchTTS } from '../services/elevenLabsTTS.ts';
+import { speakText, prefetchTTS } from '../services/ttsAdapter.ts';
 
 type SlideType = 'INTRO' | 'QUESTION' | 'OUTRO';
 
@@ -58,7 +58,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // Use a ref for isAutoSelecting so cleanup closures always see the latest value
   const isAutoSelectingRef = useRef(false);
 
-  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff, voiceId, addIntroOutro, isVertical } = config;
+  const { isTimed, isAutomatic, autoTimeLimit, title: testTitle, recordSession, theme, enableSound, enableTTS, withPicture, optionsOff, voiceId, addIntroOutro, isVertical, ttsProvider } = config;
   const currentQuestion = questions[currentIndex];
   const selectedOption = userChoices[currentIndex] || null;
 
@@ -101,7 +101,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         : `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
-        const audioData = await speakText(textToSpeak, voiceId);
+        const audioData = await speakText(textToSpeak, voiceId, ttsProvider);
         if (audioData) {
           SoundEngine.playBase64Audio(audioData);
         }
@@ -109,14 +109,15 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
         const correctLetter = currentQuestion.correctAnswer;
         const correctText = currentQuestion[`option${correctLetter}`];
-        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId);
+        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId, ttsProvider);
 
         if (currentIndex < questions.length - 1) {
           const nextQ = questions[currentIndex + 1];
           await prefetchTTS(optionsOff 
             ? `${nextQ.question}` 
             : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`,
-            voiceId
+            voiceId,
+            ttsProvider
           );
         }
       };
@@ -135,13 +136,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (isQuizActive && slideType === 'INTRO') {
       const runIntro = async () => {
         if (enableTTS) {
-          const introAudioData = await speakText(`Welcome to ${testTitle}`, voiceId);
+          const introAudioData = await speakText(`Welcome to ${testTitle}`, voiceId, ttsProvider);
           if (introAudioData) SoundEngine.playBase64Audio(introAudioData);
           
           // Prefetch Q1
           const firstQ = questions[0];
           const questionText = optionsOff ? `${firstQ.question}` : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-          prefetchTTS(questionText, voiceId);
+          prefetchTTS(questionText, voiceId, ttsProvider);
         }
         
         const words = testTitle.split(/\s+/).length;
@@ -161,7 +162,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       const runOutro = async () => {
         const outroText = "Thanks for playing! How many did you get right? Let us know in the comments!";
         if (enableTTS) {
-          const outroAudioData = await speakText(outroText, voiceId);
+          const outroAudioData = await speakText(outroText, voiceId, ttsProvider);
           if (outroAudioData) SoundEngine.playBase64Audio(outroAudioData);
         }
         setTimeout(() => {
@@ -184,7 +185,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       const triggerTTS = async () => {
         // Small delay to let the "Success/Error" sound play first if enabled
         await new Promise(resolve => setTimeout(resolve, 500));
-        const audioData = await speakText(textToSpeak, voiceId);
+        const audioData = await speakText(textToSpeak, voiceId, ttsProvider);
         if (audioData) {
           SoundEngine.playBase64Audio(audioData);
         }
@@ -230,7 +231,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     // Eagerly prefetch first slide TTS
     if (enableTTS) {
        if (addIntroOutro) {
-          prefetchTTS(`Welcome to ${testTitle}`, voiceId);
+          prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
        } else {
           const firstQ = questions[0];
           const questionText = optionsOff 
@@ -239,8 +240,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           const correctLetter = firstQ.correctAnswer;
           const correctText = firstQ[`option${correctLetter}`];
           // Sequentially prefetch to avoid concurrency limits
-          prefetchTTS(questionText, voiceId).then(() => {
-            prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId);
+          prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
+            prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId, ttsProvider);
           });
        }
     }
@@ -325,7 +326,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           const correctLetter = currentQuestion.correctAnswer;
           const correctText = currentQuestion[`option${correctLetter}`];
           const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
-          speakText(textToSpeak, voiceId).then(audioData => {
+          speakText(textToSpeak, voiceId, ttsProvider).then(audioData => {
             if (audioData) SoundEngine.playBase64Audio(audioData);
           });
         }

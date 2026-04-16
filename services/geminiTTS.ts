@@ -20,7 +20,7 @@ export const speakText = async (text: string, voice: 'Puck' | 'Charon' | 'Kore' 
     console.log("Gemini TTS: Generating speech for text:", text.substring(0, 50) + "...");
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: "gemini-3.1-flash-tts-preview",
       contents: [{ parts: [{ text }] }],
       config: {
         responseModalities: [Modality.AUDIO],

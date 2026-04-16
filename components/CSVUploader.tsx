@@ -24,6 +24,14 @@ const ELEVENLABS_VOICES = [
   { id: 'XB0fDUnXU5powW0NhzG7', name: 'Charlotte (Engaging)' }
 ];
 
+const GEMINI_VOICES = [
+  { id: 'Puck', name: 'Puck (Lively)' },
+  { id: 'Charon', name: 'Charon (Deep)' },
+  { id: 'Kore', name: 'Kore (Calm)' },
+  { id: 'Fenrir', name: 'Fenrir (Intense)' },
+  { id: 'Zephyr', name: 'Zephyr (Brisk)' }
+];
+
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
@@ -44,6 +52,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
   const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
+  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini'>('elevenlabs');
   const [selectedVoiceId, setSelectedVoiceId] = useState('tQHPlZCaA3Oe1X8BqFIp');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
@@ -116,6 +125,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       withPicture,
       optionsOff,
       voiceId: selectedVoiceId,
+      ttsProvider,
       addIntroOutro,
       isVertical,
       revealImageWithAnswer
@@ -216,7 +226,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                   <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">ElevenLabs TTS</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' : 'Gemini 3.1 TTS'}</span>
                     </div>
                     <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
@@ -225,15 +235,34 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                   
                   {enableTTS && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Provider Selection */}
+                      <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem] col-span-1 md:col-span-2">
+                        <div className="flex flex-col flex-1">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">TTS Provider</span>
+                          <div className="flex bg-[#0B1A2C] rounded-lg border border-white/10 p-1">
+                            <button 
+                              onClick={() => { setTtsProvider('elevenlabs'); setSelectedVoiceId(ELEVENLABS_VOICES[0].id); }}
+                              className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'elevenlabs' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                            > ElevenLabs
+                            </button>
+                            <button 
+                              onClick={() => { setTtsProvider('gemini'); setSelectedVoiceId(GEMINI_VOICES[0].id); }}
+                              className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'gemini' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                            > Gemini 3.1
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col w-full">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Voice Persona</span>
                           <select 
                             value={selectedVoiceId}
                             onChange={(e) => setSelectedVoiceId(e.target.value)}
                             className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none w-full"
                           >
-                            {ELEVENLABS_VOICES.map(voice => (
+                            {(ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : GEMINI_VOICES).map(voice => (
                               <option key={voice.id} value={voice.id}>{voice.name}</option>
                             ))}
                           </select>
@@ -245,7 +274,10 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                           onClick={async () => {
                             setIsTestingTTS(true);
                             SoundEngine.init();
-                            const data = await speakText("Testing the AI Auto-Reader.", selectedVoiceId);
+                            // We import directly here just for testing to avoid heavy imports in Uploader,
+                            // or better, since we're inside the component, we can dynamically import adapter
+                            const ttsAdapter = await import('../services/ttsAdapter.ts');
+                            const data = await ttsAdapter.speakText("Testing the AI Auto-Reader.", selectedVoiceId, ttsProvider);
                             if (data) SoundEngine.playBase64Audio(data);
                             setIsTestingTTS(false);
                           }}
