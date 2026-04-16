@@ -42,15 +42,17 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         // Clean HTML tags and excessive whitespace
         const safeText = text.replace(/<[^>]+>/g, '').trim();
 
-        // Making it exactly like the explicit REST call
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                systemInstruction: {
+                    parts: [{ text: promptModifier }]
+                },
                 contents: [{
-                    parts: [{ text: `${promptModifier}${safeText}` }]
+                    parts: [{ text: safeText }]
                 }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
@@ -75,14 +77,22 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         
         // Find the audio part within the array to prevent failure if it also generates text
         const candidate = data?.candidates?.[0];
-        const audioPart = candidate?.content?.parts?.find((p: any) => p.inlineData && p.inlineData.mimeType?.startsWith('audio/'));
-        const base64Audio = audioPart?.inlineData?.data;
+        const parts = candidate?.content?.parts || [];
+        
+        let base64Audio = null;
+        for (const p of parts) {
+            const inlineData = p.inlineData || p.inline_data;
+            if (inlineData && inlineData.mimeType && inlineData.mimeType.startsWith('audio/')) {
+                base64Audio = inlineData.data;
+                break;
+            }
+        }
 
         if (base64Audio) {
             console.log("Gemini TTS: Received audio data, length:", base64Audio.length);
             ttsCache.set(cacheKey, base64Audio);
         } else {
-            console.warn("Gemini TTS: No audio data found in response geometry.");
+            console.warn("Gemini TTS: No audio data found in response geometry.", JSON.stringify(parts));
         }
 
         return base64Audio || null;
