@@ -45,6 +45,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [enableTTS, setEnableTTS] = useState(false);
   const [testTitle, setTestTitle] = useState('');
   const [isTestingTTS, setIsTestingTTS] = useState(false);
+  const [ttsTestError, setTtsTestError] = useState<string | null>(null);
   const [withPicture, setWithPicture] = useState(false);
   const [optionsOff, setOptionsOff] = useState(false);
   const [addIntroOutro, setAddIntroOutro] = useState(false);
@@ -267,17 +268,34 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
+                      <div className="flex flex-col gap-2 px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
                         <button
                           onClick={async () => {
-                            setIsTestingTTS(true);
-                            SoundEngine.init();
-                            // We import directly here just for testing to avoid heavy imports in Uploader,
-                            // or better, since we're inside the component, we can dynamically import adapter
-                            const ttsAdapter = await import('../services/ttsAdapter.ts');
-                            const data = await ttsAdapter.speakText("Testing the AI Auto-Reader.", selectedVoiceId, ttsProvider);
-                            if (data) SoundEngine.playBase64Audio(data);
-                            setIsTestingTTS(false);
+                            try {
+                              setIsTestingTTS(true);
+                              setTtsTestError(null);
+                              SoundEngine.init();
+                              
+                              const ttsAdapter = await import('../services/ttsAdapter.ts');
+                              const data = await ttsAdapter.speakText("Testing the AI Auto-Reader.", selectedVoiceId, ttsProvider);
+                              
+                              if (data) {
+                                SoundEngine.playBase64Audio(data);
+                              } else {
+                                setTtsTestError("Failed to generate audio. Check your API key and network.");
+                              }
+                            } catch (err: any) {
+                              if (err.message === 'RATE_LIMIT_EXCEEDED') {
+                                setTtsTestError("Too many requests (429). Please wait a moment.");
+                              } else if (err.message === 'AUTH_ERROR') {
+                                setTtsTestError("Authentication failed. Check server config.");
+                              } else {
+                                setTtsTestError("An unexpected error occurred during the test.");
+                              }
+                              console.error(err);
+                            } finally {
+                              setIsTestingTTS(false);
+                            }
                           }}
                           disabled={isTestingTTS}
                           className="w-full h-full text-[9px] font-bold uppercase tracking-widest text-indigo-300 hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
@@ -289,6 +307,11 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                           )}
                           <span>{isTestingTTS ? 'Testing...' : 'Test Connection'}</span>
                         </button>
+                        {ttsTestError && (
+                          <div className="text-[8px] font-bold text-rose-400 uppercase tracking-tight leading-tight animate-fade-in text-center">
+                            {ttsTestError}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

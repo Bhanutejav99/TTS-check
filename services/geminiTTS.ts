@@ -21,12 +21,8 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
 
     const requestPromise = (async () => {
         try {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        console.log("Gemini TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
-        if (!apiKey) {
-            console.error("Gemini TTS: VITE_GEMINI_API_KEY missing from environment. Make sure it's set in Vercel and redeploy.");
-            return null;
-        }
+        console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
+        console.log("Gemini TTS: Calling proxy /api/tts | model:", MODEL_ID);
 
         console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
         console.log("Gemini TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
@@ -42,7 +38,8 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         // Clean HTML tags and excessive whitespace
         const safeText = text.replace(/<[^>]+>/g, '').trim();
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`, {
+        // Secure proxy call (hides API key from Network tab)
+        const response = await fetch(`/api/tts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -67,16 +64,30 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
             })
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Gemini TTS: API error", response.status, errorText);
+        if (!googleResponse.ok) {
+            const errorText = await googleResponse.text();
+            let errorData;
+            try { errorData = JSON.parse(errorText); } catch(e) { errorData = errorText; }
+            
+            console.error("Gemini TTS: Proxy/API error", googleResponse.status, errorData);
+            
+            if (googleResponse.status === 429) {
+                throw new Error("RATE_LIMIT_EXCEEDED");
+            } else if (googleResponse.status === 401 || googleResponse.status === 403) {
+                throw new Error("AUTH_ERROR");
+            }
             return null;
         }
 
-        const data = await response.json();
+        const data = await googleResponse.json();
         
         // Find the audio part within the array to prevent failure if it also generates text
         const candidate = data?.candidates?.[0];
+        
+        if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+            console.warn("Gemini TTS: Generation finished with non-STOP reason:", candidate.finishReason);
+        }
+
         const parts = candidate?.content?.parts || [];
         
         let base64Audio = null;
@@ -92,12 +103,14 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
             console.log("Gemini TTS: Received audio data, length:", base64Audio.length);
             ttsCache.set(cacheKey, base64Audio);
         } else {
-            console.warn("Gemini TTS: No audio data found in response geometry.", JSON.stringify(parts));
+            console.warn("Gemini TTS: No audio data found in response geometry. Full response:", JSON.stringify(data));
         }
 
         return base64Audio || null;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Gemini TTS: Error generating speech", error);
+            if (error.message === "RATE_LIMIT_EXCEEDED") throw error;
+            if (error.message === "AUTH_ERROR") throw error;
             return null;
         }
     })();
