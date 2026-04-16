@@ -106,19 +106,24 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           SoundEngine.playBase64Audio(audioData);
         }
 
-        // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
         const correctLetter = currentQuestion.correctAnswer;
         const correctText = currentQuestion[`option${correctLetter}`];
-        await prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId, ttsProvider);
+        const answerText = `answer is option ${correctLetter} ${correctText}`;
+        
+        const nextQText = currentIndex < questions.length - 1 
+          ? (optionsOff 
+              ? `${questions[currentIndex + 1].question}` 
+              : `${questions[currentIndex + 1].question}. Options are: A, ${questions[currentIndex + 1].optionA}. B, ${questions[currentIndex + 1].optionB}. C, ${questions[currentIndex + 1].optionC}. D, ${questions[currentIndex + 1].optionD}.`)
+          : null;
 
-        if (currentIndex < questions.length - 1) {
-          const nextQ = questions[currentIndex + 1];
-          await prefetchTTS(optionsOff 
-            ? `${nextQ.question}` 
-            : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`,
-            voiceId,
-            ttsProvider
-          );
+        if (ttsProvider === 'gemini') {
+          // Gemini tolerates parallel hits well; unleashing both immediately avoids sequential delays
+          prefetchTTS(answerText, voiceId, ttsProvider);
+          if (nextQText) prefetchTTS(nextQText, voiceId, ttsProvider);
+        } else {
+          // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
+          await prefetchTTS(answerText, voiceId, ttsProvider);
+          if (nextQText) await prefetchTTS(nextQText, voiceId, ttsProvider);
         }
       };
 
@@ -139,10 +144,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           const introAudioData = await speakText(`Welcome to ${testTitle}`, voiceId, ttsProvider);
           if (introAudioData) SoundEngine.playBase64Audio(introAudioData);
           
-          // Prefetch Q1
+          // Prefetch Q1 (Wait, we will already do this in handleStart now, so just ensure it's not duplicating sequentially)
           const firstQ = questions[0];
           const questionText = optionsOff ? `${firstQ.question}` : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-          prefetchTTS(questionText, voiceId, ttsProvider);
+          if (ttsProvider !== 'gemini') { 
+              // For Gemini, it's already fired in parallel at handleStart
+              prefetchTTS(questionText, voiceId, ttsProvider);
+          }
         }
         
         const words = testTitle.split(/\s+/).length;
@@ -230,19 +238,32 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
     // Eagerly prefetch first slide TTS
     if (enableTTS) {
+       const firstQ = questions[0];
+       const questionText = optionsOff 
+         ? `${firstQ.question}` 
+         : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+       const correctLetter = firstQ.correctAnswer;
+       const correctText = firstQ[`option${correctLetter}`];
+       const answerText = `answer is option ${correctLetter} ${correctText}`;
+
        if (addIntroOutro) {
-          prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
+          if (ttsProvider === 'gemini') {
+            prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
+            prefetchTTS(questionText, voiceId, ttsProvider); // Parallel Q1 prefetch for Gemini to beat the 3.5s intro timer!
+          } else {
+            prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
+            // Q1 logic continues in runIntro for sequential safety
+          }
        } else {
-          const firstQ = questions[0];
-          const questionText = optionsOff 
-            ? `${firstQ.question}` 
-            : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-          const correctLetter = firstQ.correctAnswer;
-          const correctText = firstQ[`option${correctLetter}`];
-          // Sequentially prefetch to avoid concurrency limits
-          prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
-            prefetchTTS(`answer is option ${correctLetter} ${correctText}`, voiceId, ttsProvider);
-          });
+          if (ttsProvider === 'gemini') {
+            prefetchTTS(questionText, voiceId, ttsProvider);
+            prefetchTTS(answerText, voiceId, ttsProvider);
+          } else {
+            // Sequentially prefetch to avoid ElevenLabs concurrency limits
+            prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
+              prefetchTTS(answerText, voiceId, ttsProvider);
+            });
+          }
        }
     }
 
