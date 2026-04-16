@@ -154,7 +154,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         }
         
         const words = testTitle.split(/\s+/).length;
-        const durationMs = Math.max(3000, words * 400 + 1500); // Dynamic wait based on title length
+        let durationMs = Math.max(3000, words * 400 + 1500); // Dynamic wait based on title length
+        if (ttsProvider === 'gemini') {
+            durationMs = Math.max(durationMs, 8000); // Force intro duration to buffer Gemini Q1
+        }
         
         setTimeout(() => {
            setSlideType('QUESTION');
@@ -273,8 +276,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         setIsInitializing(true);
 
         // --- WORLD CLASS START SEQUENCE ---
-        // 1. Stabilize (4s) — TTS prefetch runs during this wait
-        await wait(4000);
+        // 1. Stabilize — TTS prefetch runs during this wait
+        const stabilizeWait = ttsProvider === 'gemini' ? 8000 : 4000;
+        await wait(stabilizeWait);
 
         // 2. Reveal UI
         setHasStarted(true);
@@ -300,6 +304,11 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         setIsInitializing(false);
       }
     } else {
+      if (ttsProvider === 'gemini' && !addIntroOutro && enableTTS) {
+        setIsInitializing(true);
+        await wait(6000); // Give Gemini a headstart
+        setIsInitializing(false);
+      }
       setHasStarted(true);
       setIsQuizActive(true);
     }
