@@ -23,9 +23,7 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         try {
         console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
         console.log("Gemini TTS: Calling proxy /api/tts | model:", MODEL_ID);
-
-        console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
-        console.log("Gemini TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
+        console.log("Gemini TTS: Using voice:", targetVoiceId);
 
         let mappedVoiceId = targetVoiceId;
         let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: `;
@@ -39,7 +37,7 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         const safeText = text.replace(/<[^>]+>/g, '').trim();
 
         // Secure proxy call (hides API key from Network tab)
-        const response = await fetch(`/api/tts`, {
+        const googleResponse = await fetch(`/api/tts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
