@@ -26,8 +26,11 @@ const ELEVENLABS_VOICES = [
 
 const GEMINI_VOICES = [
   { id: 'Puck', name: 'Puck (Lively)' },
+  { id: 'Puck-IN', name: 'Puck (Indian Accent)' },
   { id: 'Charon', name: 'Charon (Deep)' },
+  { id: 'Charon-IN', name: 'Charon (Indian Accent)' },
   { id: 'Kore', name: 'Kore (Calm)' },
+  { id: 'Kore-IN', name: 'Kore (Indian Accent)' },
   { id: 'Fenrir', name: 'Fenrir (Intense)' },
   { id: 'Zephyr', name: 'Zephyr (Brisk)' }
 ];

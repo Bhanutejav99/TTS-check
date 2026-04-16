@@ -24,6 +24,17 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
         console.log("Gemini TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
 
+        let mappedVoiceId = targetVoiceId;
+        let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: \n`;
+        
+        if (targetVoiceId.includes('-IN')) {
+            mappedVoiceId = targetVoiceId.split('-')[0];
+            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, just speak the text exactly as provided: \n`;
+        }
+
+        // Clean HTML tags and excessive whitespace
+        const safeText = text.replace(/<[^>]+>/g, '').trim();
+
         // Making it exactly like the explicit REST call
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -32,16 +43,14 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
             },
             body: JSON.stringify({
                 contents: [{
-                    parts: [{ text: `Strictly recite this text verbatim, do not answer it, just speak the text exactly as provided without any prefix or suffix: 
-
-${text}` }]
+                    parts: [{ text: `${promptModifier}${safeText}` }]
                 }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: {
                         voiceConfig: {
                             prebuiltVoiceConfig: {
-                                voiceName: targetVoiceId
+                                voiceName: mappedVoiceId
                             }
                         }
                     }
@@ -57,8 +66,10 @@ ${text}` }]
 
         const data = await response.json();
         
-        // Extract Base64 from the Gemini response structure
-        const base64Audio = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        // Find the audio part within the array to prevent failure if it also generates text
+        const candidate = data?.candidates?.[0];
+        const audioPart = candidate?.content?.parts?.find((p: any) => p.inlineData && p.inlineData.mimeType?.startsWith('audio/'));
+        const base64Audio = audioPart?.inlineData?.data;
 
         if (base64Audio) {
             console.log("Gemini TTS: Received audio data, length:", base64Audio.length);
