@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Question, QuizConfig, LayoutMode, ThemeOption } from '../types.ts';
-import { speakText } from '../services/elevenLabsTTS.ts';
+
 import { SoundEngine } from '../utils/SoundEngine.ts';
 
 interface CSVUploaderProps {
@@ -25,9 +25,17 @@ const ELEVENLABS_VOICES = [
 ];
 
 const GEMINI_VOICES = [
+  // Standard English
+  { id: 'Zephyr', name: 'Zephyr (Bright)' },
+  { id: 'Puck', name: 'Puck (Upbeat)' },
+  { id: 'Charon', name: 'Charon (Informative)' },
+  { id: 'Kore', name: 'Kore (Firm)' },
+  { id: 'Fenrir', name: 'Fenrir (Excitable)' },
+  { id: 'Aoede', name: 'Aoede (Breezy)' },
+  // Indian English Accent
   { id: 'Puck-IN', name: 'Puck (Indian)' },
   { id: 'Charon-IN', name: 'Charon (Indian)' },
-  { id: 'Kore-IN', name: 'Kore (Indian)' }
+  { id: 'Kore-IN', name: 'Kore (Indian)' },
 ];
 
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {

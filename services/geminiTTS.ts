@@ -113,10 +113,14 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         }
     })();
     
+    // Register BEFORE awaiting to prevent duplicate in-flight requests
     pendingRequests.set(cacheKey, requestPromise);
-    const result = await requestPromise;
-    pendingRequests.delete(cacheKey);
-    return result;
+    try {
+        const result = await requestPromise;
+        return result;
+    } finally {
+        pendingRequests.delete(cacheKey);
+    }
 };
 
 export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {
