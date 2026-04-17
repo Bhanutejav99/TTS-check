@@ -2,8 +2,8 @@
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
-// Google Cloud TTS config
-const DEFAULT_VOICE = 'en-IN-Neural2-D';
+// Google Cloud TTS config - Chirp HD is the most natural generative generation
+const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
 const DEFAULT_LANG = 'en-IN';
 
 export const speakText = async (text: string, voiceName?: string): Promise<string | null> => {

@@ -39,10 +39,12 @@ const GEMINI_VOICES = [
 ];
 
 const GOOGLE_VOICES = [
-  { id: 'en-IN-Neural2-D', name: 'Google (India Male)' },
-  { id: 'en-IN-Neural2-A', name: 'Google (India Female)' },
-  { id: 'en-US-Neural2-D', name: 'Google (US Male)' },
-  { id: 'en-US-Neural2-F', name: 'Google (US Female)' },
+  { id: 'en-IN-Chirp-HD-D', name: 'Google India Male (Premium)' },
+  { id: 'en-IN-Chirp-HD-F', name: 'Google India Female (Premium)' },
+  { id: 'en-IN-Neural2-D', name: 'Google India Male (Standard HD)' },
+  { id: 'en-IN-Neural2-A', name: 'Google India Female (Standard HD)' },
+  { id: 'en-US-Neural2-D', name: 'Google US Male (Standard HD)' },
+  { id: 'en-US-Neural2-F', name: 'Google US Female (Standard HD)' },
 ];
 
 // OpenAI uses a fixed voice (alloy) + Indian MCQ instruction — voice is locked for consistency
