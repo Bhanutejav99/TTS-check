@@ -106,19 +106,12 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           SoundEngine.playBase64Audio(audioData);
         }
 
+        // Prefetch only the answer for this question (saves RPD quota)
+        // Next question TTS will be fetched on-demand when that slide loads
         const correctLetter = currentQuestion.correctAnswer;
         const correctText = currentQuestion[`option${correctLetter}`];
         const answerText = `answer is option ${correctLetter} ${correctText}`;
-        
-        const nextQText = currentIndex < questions.length - 1 
-          ? (optionsOff 
-              ? `${questions[currentIndex + 1].question}` 
-              : `${questions[currentIndex + 1].question}. Options are: A, ${questions[currentIndex + 1].optionA}. B, ${questions[currentIndex + 1].optionB}. C, ${questions[currentIndex + 1].optionC}. D, ${questions[currentIndex + 1].optionD}.`)
-          : null;
-
-        // Sequential prefetching — avoids hitting rate limits for both providers
         await prefetchTTS(answerText, voiceId, ttsProvider);
-        if (nextQText) await prefetchTTS(nextQText, voiceId, ttsProvider);
       };
 
       triggerTTS();

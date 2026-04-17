@@ -5,9 +5,10 @@ const pendingRequests = new Map<string, Promise<string | null>>();
 const VOICE_ID = 'Zephyr'; // Default Gemini voice
 const MODEL_ID = 'gemini-3.1-flash-tts-preview';
 
-// Rate limit management — queue requests to stay under free-tier RPM limits
+// Rate limit management — queue requests to stay under Paid Tier 1 limits
+// Actual limits: 10 RPM, 100 RPD (Requests Per Day)
 let lastRequestTime = 0;
-const MIN_REQUEST_GAP_MS = 4200; // ~14 RPM max, stays under 15 RPM free-tier limit
+const MIN_REQUEST_GAP_MS = 7000; // ~8.5 RPM max, stays safely under 10 RPM limit
 
 const waitForSlot = async () => {
     const now = Date.now();
@@ -20,14 +21,14 @@ const waitForSlot = async () => {
     lastRequestTime = Date.now();
 };
 
-const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 2): Promise<Response> => {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         await waitForSlot();
         const response = await fetch(url, options);
 
         if (response.status === 429 && attempt < maxRetries) {
-            // Exponential backoff: 2s, 4s, 8s
-            const backoffMs = Math.pow(2, attempt + 1) * 1000;
+            // Exponential backoff: 8s, 16s — aggressive backoff to not waste RPD quota
+            const backoffMs = Math.pow(2, attempt + 3) * 1000;
             console.warn(`Gemini TTS: 429 Rate Limited — retry ${attempt + 1}/${maxRetries} after ${backoffMs}ms`);
             await new Promise(resolve => setTimeout(resolve, backoffMs));
             continue;
