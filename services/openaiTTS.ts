@@ -55,7 +55,7 @@ export const speakText = async (text: string, _voicePresetId?: string): Promise<
                     text: cleaned,
                     voice: FIXED_VOICE,
                     instructions: MCQ_INSTRUCTION,
-                    speed: 1.15,  // Slightly faster than default for quiz energy
+                    speed: 1.0,  // alloy at natural speed is already well-paced
                 })
             });
 
