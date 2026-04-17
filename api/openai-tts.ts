@@ -22,7 +22,7 @@ export default async function handler(req: Request) {
 
   try {
     const body = await req.json();
-    const { text, voice = 'echo', instructions } = body;
+    const { text, voice = 'alloy', instructions, speed } = body;
 
     // gpt-4o-mini-tts supports voice instructions for accent/tone control
     const requestBody: any = {
@@ -34,6 +34,9 @@ export default async function handler(req: Request) {
 
     if (instructions) {
       requestBody.instructions = instructions;
+    }
+    if (speed && speed >= 0.25 && speed <= 4.0) {
+      requestBody.speed = speed;
     }
 
     const openAIResponse = await fetch('https://api.openai.com/v1/audio/speech', {

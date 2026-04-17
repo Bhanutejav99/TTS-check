@@ -45,9 +45,9 @@ const GOOGLE_VOICES = [
   { id: 'en-US-Neural2-F', name: 'Google (US Female)' },
 ];
 
-// OpenAI uses a fixed voice (onyx) + MCQ instruction — voice is not user-selectable
+// OpenAI uses a fixed voice (alloy) + Indian MCQ instruction — voice is locked for consistency
 const OPENAI_VOICES = [
-  { id: 'onyx-mcq', name: 'Onyx — Indian MCQ (Fixed)' },
+  { id: 'alloy-mcq', name: 'Alloy — Indian MCQ Reader (Fixed)' },
 ];
 
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
