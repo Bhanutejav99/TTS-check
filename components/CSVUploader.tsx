@@ -45,6 +45,15 @@ const GOOGLE_VOICES = [
   { id: 'en-US-Neural2-F', name: 'Google (US Female)' },
 ];
 
+const OPENAI_VOICES = [
+  { id: 'echo-in', name: 'Echo (Indian Male)' },
+  { id: 'onyx-in', name: 'Onyx (Indian Male, Deep)' },
+  { id: 'shimmer-in', name: 'Shimmer (Indian Female)' },
+  { id: 'nova-in', name: 'Nova (Indian Female, Warm)' },
+  { id: 'alloy-in', name: 'Alloy (Indian Neutral)' },
+  { id: 'fable-in', name: 'Fable (Indian Narrator)' },
+];
+
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
@@ -66,7 +75,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
   const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
-  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid'>('gemini');
+  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid' | 'openai'>('gemini');
   const [selectedVoiceId, setSelectedVoiceId] = useState('Puck-IN');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
@@ -241,8 +250,9 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                         <div className="flex flex-col">
                           <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
                           <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
-                            {ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' : 
-                             ttsProvider === 'google' ? 'Google Cloud TTS' : 'Gemini 3.1 (Hybrid)'}
+                            {ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' :
+                             ttsProvider === 'google' ? 'Google Cloud TTS' :
+                             ttsProvider === 'openai' ? 'OpenAI gpt-4o-mini-tts' : 'Gemini 3.1 (Hybrid)'}
                           </span>
                         </div>
                         <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
@@ -267,10 +277,15 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                                   className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'gemini' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
                                 > Gemini 3.1
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => { setTtsProvider('google'); setSelectedVoiceId(GOOGLE_VOICES[0].id); }}
                                   className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'google' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                                > Google Cloud
+                                > Google
+                                </button>
+                                <button
+                                  onClick={() => { setTtsProvider('openai'); setSelectedVoiceId(OPENAI_VOICES[0].id); }}
+                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'openai' ? 'bg-emerald-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                                > OpenAI 🇮🇳
                                 </button>
                               </div>
                             </div>
@@ -287,6 +302,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                             {ttsProvider === 'elevenlabs' && ELEVENLABS_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                             {ttsProvider === 'gemini' && GEMINI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                             {ttsProvider === 'google' && GOOGLE_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                            {ttsProvider === 'openai' && OPENAI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                           </select>
                         </div>
                       </div>
