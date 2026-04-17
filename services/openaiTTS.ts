@@ -2,26 +2,96 @@
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
-// Predefined Indian accent instruction for MCQ quiz reading
-const INDIAN_ACCENT_INSTRUCTION = `Speak in a clear, warm, and engaging Indian English accent. 
-Your delivery should be professional, like a knowledgeable Indian teacher reading out a quiz question. 
-Speak at a moderate pace. Articulate each word clearly. 
-Strictly recite the text verbatim — do not add any commentary or conversation.`;
+// ─── Fixed Config ─────────────────────────────────────────────
+// Single stable voice — do NOT change per request to maintain consistency
+const FIXED_VOICE = 'onyx';
 
-// Voice options for gpt-4o-mini-tts that work best with Indian accent instruction
-export const OPENAI_VOICES = [
-  { id: 'echo-in', label: 'Echo (Indian Male)', voice: 'echo', instructions: INDIAN_ACCENT_INSTRUCTION },
-  { id: 'onyx-in', label: 'Onyx (Indian Male, Deep)', voice: 'onyx', instructions: INDIAN_ACCENT_INSTRUCTION },
-  { id: 'shimmer-in', label: 'Shimmer (Indian Female)', voice: 'shimmer', instructions: INDIAN_ACCENT_INSTRUCTION },
-  { id: 'nova-in', label: 'Nova (Indian Female, Warm)', voice: 'nova', instructions: INDIAN_ACCENT_INSTRUCTION },
-  { id: 'alloy-in', label: 'Alloy (Indian Neutral)', voice: 'alloy', instructions: INDIAN_ACCENT_INSTRUCTION },
-  { id: 'fable-in', label: 'Fable (Indian Narrator)', voice: 'fable', instructions: INDIAN_ACCENT_INSTRUCTION },
-];
+const MCQ_INSTRUCTION = `You are a calm, professional Indian English teacher reading a multiple choice question to students in a classroom.
+Speak in a clear, steady Indian English accent throughout. Do not switch accents.
+Maintain a moderate, even pace. Add a natural pause after the question and after each option.
+Clearly emphasize the option letter (for example: "Option A", "Option B") before reading each choice.
+Strictly recite the text verbatim. Do not add any commentary, greetings, or conversation.`;
 
-export const speakText = async (text: string, voicePresetId?: string): Promise<string | null> => {
-    // Find the voice preset (default to echo-in if not found)
-    const preset = OPENAI_VOICES.find(v => v.id === voicePresetId) || OPENAI_VOICES[0];
-    const cacheKey = `openai-${preset.id}-${text}`;
+// ─── Number Spelling ──────────────────────────────────────────
+const NUMBER_WORDS: Record<string, string> = {
+    '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four',
+    '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine',
+    '10': 'ten', '11': 'eleven', '12': 'twelve', '13': 'thirteen',
+    '14': 'fourteen', '15': 'fifteen', '16': 'sixteen', '17': 'seventeen',
+    '18': 'eighteen', '19': 'nineteen', '20': 'twenty', '30': 'thirty',
+    '40': 'forty', '50': 'fifty', '60': 'sixty', '70': 'seventy',
+    '80': 'eighty', '90': 'ninety', '100': 'hundred'
+};
+
+const spellOutNumbers = (text: string): string => {
+    // Replace standalone small integers (0-100) with their word equivalents
+    return text.replace(/\b(\d+)\b/g, (match) => {
+        if (NUMBER_WORDS[match]) return NUMBER_WORDS[match];
+        const n = parseInt(match, 10);
+        // Spell out tens (21-99)
+        if (n > 20 && n < 100) {
+            const tens = Math.floor(n / 10) * 10;
+            const ones = n % 10;
+            const tensWord = NUMBER_WORDS[String(tens)] || String(tens);
+            const onesWord = ones > 0 ? `-${NUMBER_WORDS[String(ones)] || String(ones)}` : '';
+            return `${tensWord}${onesWord}`;
+        }
+        // Leave larger numbers (years, IDs) as-is
+        return match;
+    });
+};
+
+// ─── MCQ Text Formatter ───────────────────────────────────────
+/**
+ * Detects if text contains MCQ options and formats it for optimal TTS delivery:
+ * - Adds structured labels: "Question: ...", "Options: Option A. ..."
+ * - Adds "..." pause markers after question and each option
+ * - Spells out small numbers for clarity
+ *
+ * If text is not an MCQ (e.g. standalone option or intro text), formats it cleanly.
+ */
+const formatForMCQ = (rawText: string): string => {
+    // Strip HTML tags
+    const clean = rawText.replace(/<[^>]+>/g, '').trim();
+
+    // Detect MCQ options pattern: lines or segments starting with A. B. C. D.
+    const optionRegex = /\b([A-D])[.)]\s*/gi;
+    const hasOptions = optionRegex.test(clean);
+
+    if (!hasOptions) {
+        // Plain text (e.g. "Testing the AI Auto-Reader") — just spell numbers and add clarity
+        return spellOutNumbers(clean);
+    }
+
+    // Split into question part and options part
+    // Find where the first option starts (A. or A))
+    const splitMatch = clean.match(/^(.*?)\s*\b[A-D][.)]/s);
+    const questionPart = splitMatch ? splitMatch[1].trim() : clean;
+
+    // Extract individual options using regex
+    const optionMatches = [...clean.matchAll(/\b([A-D])[.)]\s*([^A-D\n]*?)(?=\s*\b[A-D][.)]|$)/gi)];
+
+    const formattedQuestion = spellOutNumbers(questionPart) || 'Question';
+    
+    const formattedOptions = optionMatches.map(match => {
+        const letter = match[1].toUpperCase();
+        const content = spellOutNumbers(match[2].trim());
+        return `Option ${letter}. … ${content}`;
+    }).join(' … ');
+
+    if (formattedOptions) {
+        return `Question: ${formattedQuestion} … Options: ${formattedOptions} …`;
+    }
+
+    // Fallback if option extraction failed
+    return spellOutNumbers(clean);
+};
+
+// ─── Public API ───────────────────────────────────────────────
+export const speakText = async (text: string, _voicePresetId?: string): Promise<string | null> => {
+    // Always use fixed voice — ignore voicePresetId to ensure consistency
+    const formattedText = formatForMCQ(text);
+    const cacheKey = `openai-mcq-${FIXED_VOICE}-${formattedText}`;
 
     if (ttsCache.has(cacheKey)) {
         console.log("OpenAI TTS: Cache hit");
@@ -34,31 +104,26 @@ export const speakText = async (text: string, voicePresetId?: string): Promise<s
 
     const requestPromise = (async () => {
         try {
-            const safeText = text.replace(/<[^>]+>/g, '').trim();
-            if (!safeText) return null;
+            if (!formattedText) return null;
 
-            console.log("OpenAI TTS: Generating speech for:", safeText.substring(0, 60) + "...");
-            console.log("OpenAI TTS: Using preset:", preset.label);
+            console.log("OpenAI TTS: Sending formatted MCQ to gpt-4o-mini-tts:");
+            console.log("OpenAI TTS:", formattedText.substring(0, 120));
 
             const response = await fetch('/api/openai-tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    text: safeText,
-                    voice: preset.voice,
-                    instructions: preset.instructions,
+                    text: formattedText,
+                    voice: FIXED_VOICE,
+                    instructions: MCQ_INSTRUCTION,
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("OpenAI TTS: API error", response.status, errorData);
-
-                if (response.status === 401 || response.status === 403) {
-                    throw new Error("AUTH_ERROR");
-                } else if (response.status === 429) {
-                    throw new Error("RATE_LIMIT_EXCEEDED");
-                }
+                if (response.status === 401 || response.status === 403) throw new Error("AUTH_ERROR");
+                if (response.status === 429) throw new Error("RATE_LIMIT_EXCEEDED");
                 return null;
             }
 
@@ -74,7 +139,7 @@ export const speakText = async (text: string, voicePresetId?: string): Promise<s
             console.warn("OpenAI TTS: No audio content in response");
             return null;
         } catch (error: any) {
-            console.error("OpenAI TTS: Error generating speech", error);
+            console.error("OpenAI TTS: Error", error);
             if (error.message === "AUTH_ERROR" || error.message === "RATE_LIMIT_EXCEEDED") throw error;
             return null;
         }
@@ -88,11 +153,9 @@ export const speakText = async (text: string, voicePresetId?: string): Promise<s
     }
 };
 
-export const prefetchTTS = async (text: string, voicePresetId?: string) => {
-    const preset = OPENAI_VOICES.find(v => v.id === voicePresetId) || OPENAI_VOICES[0];
-    const cacheKey = `openai-${preset.id}-${text}`;
+export const prefetchTTS = async (text: string, _voicePresetId?: string) => {
+    const formatted = formatForMCQ(text);
+    const cacheKey = `openai-mcq-${FIXED_VOICE}-${formatted}`;
     if (ttsCache.has(cacheKey)) return;
-
-    console.log("OpenAI TTS: Prefetching...");
-    await speakText(text, voicePresetId);
+    await speakText(text);
 };
