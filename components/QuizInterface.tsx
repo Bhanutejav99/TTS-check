@@ -116,15 +116,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               : `${questions[currentIndex + 1].question}. Options are: A, ${questions[currentIndex + 1].optionA}. B, ${questions[currentIndex + 1].optionB}. C, ${questions[currentIndex + 1].optionC}. D, ${questions[currentIndex + 1].optionD}.`)
           : null;
 
-        if (ttsProvider === 'gemini') {
-          // Gemini tolerates parallel hits well; unleashing both immediately avoids sequential delays
-          prefetchTTS(answerText, voiceId, ttsProvider);
-          if (nextQText) prefetchTTS(nextQText, voiceId, ttsProvider);
-        } else {
-          // Sequential prefetching to explicitly avoid ElevenLabs Concurrency Limits (429)
-          await prefetchTTS(answerText, voiceId, ttsProvider);
-          if (nextQText) await prefetchTTS(nextQText, voiceId, ttsProvider);
-        }
+        // Sequential prefetching — avoids hitting rate limits for both providers
+        await prefetchTTS(answerText, voiceId, ttsProvider);
+        if (nextQText) await prefetchTTS(nextQText, voiceId, ttsProvider);
       };
 
       triggerTTS();
@@ -249,27 +243,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
        const answerText = `answer is option ${correctLetter} ${correctText}`;
 
        if (addIntroOutro) {
-          if (ttsProvider === 'gemini') {
-            firstTTSPromise = Promise.all([
-               prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider),
-               prefetchTTS(questionText, voiceId, ttsProvider) // Parallel Q1 prefetch
-            ]);
-          } else {
-            firstTTSPromise = prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
-            // Q1 logic continues in runIntro for sequential safety
-          }
+          // Sequential: intro first, then Q1 gets prefetched during intro playback
+          firstTTSPromise = prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
        } else {
-          if (ttsProvider === 'gemini') {
-            firstTTSPromise = Promise.all([
-               prefetchTTS(questionText, voiceId, ttsProvider),
-               prefetchTTS(answerText, voiceId, ttsProvider)
-            ]);
-          } else {
-            // Sequentially prefetch to avoid ElevenLabs concurrency limits
-            firstTTSPromise = prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
-              return prefetchTTS(answerText, voiceId, ttsProvider);
-            });
-          }
+          // Sequential: question first, then answer
+          firstTTSPromise = prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
+            return prefetchTTS(answerText, voiceId, ttsProvider);
+          });
        }
     }
 

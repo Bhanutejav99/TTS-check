@@ -5,6 +5,41 @@ const pendingRequests = new Map<string, Promise<string | null>>();
 const VOICE_ID = 'Zephyr'; // Default Gemini voice
 const MODEL_ID = 'gemini-3.1-flash-tts-preview';
 
+// Rate limit management — queue requests to stay under free-tier RPM limits
+let lastRequestTime = 0;
+const MIN_REQUEST_GAP_MS = 4200; // ~14 RPM max, stays under 15 RPM free-tier limit
+
+const waitForSlot = async () => {
+    const now = Date.now();
+    const elapsed = now - lastRequestTime;
+    if (elapsed < MIN_REQUEST_GAP_MS) {
+        const waitMs = MIN_REQUEST_GAP_MS - elapsed;
+        console.log(`Gemini TTS: Throttling — waiting ${waitMs}ms for rate limit slot`);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+    lastRequestTime = Date.now();
+};
+
+const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        await waitForSlot();
+        const response = await fetch(url, options);
+
+        if (response.status === 429 && attempt < maxRetries) {
+            // Exponential backoff: 2s, 4s, 8s
+            const backoffMs = Math.pow(2, attempt + 1) * 1000;
+            console.warn(`Gemini TTS: 429 Rate Limited — retry ${attempt + 1}/${maxRetries} after ${backoffMs}ms`);
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
+            continue;
+        }
+
+        return response;
+    }
+
+    // Should never reach here, but satisfy TypeScript
+    throw new Error("RATE_LIMIT_EXCEEDED");
+};
+
 export const speakText = async (text: string, overrideVoiceId?: string): Promise<string | null> => {
     const targetVoiceId = overrideVoiceId || VOICE_ID;
     const cacheKey = `${targetVoiceId}-${text}`;
@@ -36,30 +71,32 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         // Clean HTML tags and excessive whitespace
         const safeText = text.replace(/<[^>]+>/g, '').trim();
 
-        // Secure proxy call (hides API key from Network tab)
-        const googleResponse = await fetch(`/api/tts`, {
+        const requestBody = JSON.stringify({
+            systemInstruction: {
+                parts: [{ text: promptModifier }]
+            },
+            contents: [{
+                parts: [{ text: safeText }]
+            }],
+            generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: mappedVoiceId
+                        }
+                    }
+                }
+            }
+        });
+
+        // Secure proxy call with automatic retry on 429
+        const googleResponse = await fetchWithRetry(`/api/tts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                systemInstruction: {
-                    parts: [{ text: promptModifier }]
-                },
-                contents: [{
-                    parts: [{ text: safeText }]
-                }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: mappedVoiceId
-                            }
-                        }
-                    }
-                }
-            })
+            body: requestBody
         });
 
         if (!googleResponse.ok) {
