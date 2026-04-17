@@ -47,7 +47,7 @@ export interface QuizConfig {
   withPicture: boolean;
   optionsOff: boolean;
   voiceId: string;
-  ttsProvider: 'elevenlabs' | 'gemini';
+  ttsProvider: 'elevenlabs' | 'gemini' | 'google' | 'hybrid' | 'openai';
   addIntroOutro: boolean;
   isVertical: boolean;
   revealImageWithAnswer?: boolean;
