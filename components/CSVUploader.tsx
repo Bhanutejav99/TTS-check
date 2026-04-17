@@ -38,6 +38,13 @@ const GEMINI_VOICES = [
   { id: 'Kore-IN', name: 'Kore (Indian)' },
 ];
 
+const GOOGLE_VOICES = [
+  { id: 'en-IN-Neural2-D', name: 'Google (India Male)' },
+  { id: 'en-IN-Neural2-A', name: 'Google (India Female)' },
+  { id: 'en-US-Neural2-D', name: 'Google (US Male)' },
+  { id: 'en-US-Neural2-F', name: 'Google (US Female)' },
+];
+
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
@@ -59,7 +66,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
   const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
-  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini'>('gemini');
+  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid'>('gemini');
   const [selectedVoiceId, setSelectedVoiceId] = useState('Puck-IN');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
@@ -230,36 +237,44 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
 
                 {/* AI Auto-Reader Block (Spans full width if expanded) */}
                 <div className={`flex flex-col gap-2 ${enableTTS ? 'md:col-span-2' : ''}`}>
-                  <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' : 'Gemini 3.1 TTS'}</span>
-                    </div>
-                    <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                  
-                  {enableTTS && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Provider Selection */}
-                      <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem] col-span-1 md:col-span-2">
-                        <div className="flex flex-col flex-1">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">TTS Provider</span>
-                          <div className="flex bg-[#0B1A2C] rounded-lg border border-white/10 p-1">
-                            <button 
-                              onClick={() => { setTtsProvider('elevenlabs'); setSelectedVoiceId(ELEVENLABS_VOICES[0].id); }}
-                              className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'elevenlabs' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                            > ElevenLabs
-                            </button>
-                            <button 
-                              onClick={() => { setTtsProvider('gemini'); setSelectedVoiceId(GEMINI_VOICES[0].id); }}
-                              className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'gemini' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                            > Gemini 3.1
-                            </button>
-                          </div>
+                      <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
+                          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
+                            {ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' : 
+                             ttsProvider === 'google' ? 'Google Cloud TTS' : 'Gemini 3.1 (Hybrid)'}
+                          </span>
                         </div>
+                        <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
+                          <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
+                        </button>
                       </div>
+                      
+                      {enableTTS && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Provider Selection */}
+                          <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem] col-span-1 md:col-span-2">
+                            <div className="flex flex-col flex-1">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">TTS Provider</span>
+                              <div className="flex bg-[#0B1A2C] rounded-lg border border-white/10 p-1">
+                                <button 
+                                  onClick={() => { setTtsProvider('elevenlabs'); setSelectedVoiceId(ELEVENLABS_VOICES[0].id); }}
+                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'elevenlabs' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                                > ElevenLabs
+                                </button>
+                                <button 
+                                  onClick={() => { setTtsProvider('gemini'); setSelectedVoiceId(GEMINI_VOICES[0].id); }}
+                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'gemini' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                                > Gemini 3.1
+                                </button>
+                                <button 
+                                  onClick={() => { setTtsProvider('google'); setSelectedVoiceId(GOOGLE_VOICES[0].id); }}
+                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'google' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
+                                > Google Cloud
+                                </button>
+                              </div>
+                            </div>
+                          </div>
 
                       <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
                         <div className="flex flex-col w-full">
@@ -269,9 +284,9 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                             onChange={(e) => setSelectedVoiceId(e.target.value)}
                             className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none w-full"
                           >
-                            {(ttsProvider === 'elevenlabs' ? ELEVENLABS_VOICES : GEMINI_VOICES).map(voice => (
-                              <option key={voice.id} value={voice.id}>{voice.name}</option>
-                            ))}
+                            {ttsProvider === 'elevenlabs' && ELEVENLABS_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                            {ttsProvider === 'gemini' && GEMINI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                            {ttsProvider === 'google' && GOOGLE_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                           </select>
                         </div>
                       </div>
