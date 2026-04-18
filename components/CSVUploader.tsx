@@ -154,425 +154,326 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   };
 
   const canStart = testTitle.trim() !== '' && loadedQuestions !== null;
+  const currentTheme = QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0];
 
   return (
-    <div className="w-full h-full min-h-screen bg-[#0E1521] flex items-center justify-center p-4">
-      <div className="w-full max-w-[1200px] bg-[#141C2B] rounded-[2rem] border border-white/5 p-8 md:p-12 shadow-2xl relative overflow-hidden">
+    <div className="w-full h-full min-h-screen bg-[#0E1521] flex items-center justify-center p-6 text-white/90">
+      <div className="w-full max-w-[1300px] flex flex-col gap-6">
+        {/* Header */}
+        <header className="px-2">
+          <h1 className="text-4xl font-black tracking-tight text-white">TTS <span className="text-indigo-400">Studio</span></h1>
+          <p className="text-sm text-white/40 mt-1 uppercase tracking-[0.2em] font-bold">Configure, upload, and generate your TTS content.</p>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-12 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-8">
 
-          {/* LEFT COLUMN: CONFIGURATION */}
-          <div className="space-y-10">
-
-            {/* 01 Project Identity */}
-            <div className="space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-lg">01</span>
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Project Identity</span>
-              </div>
-              <input
+           {/* LEFT PANEL: SETUP */}
+          <div className="space-y-8">
+            
+            {/* Project Title */}
+            <div className="bg-[#141C2B]/50 border border-white/5 rounded-xl p-8 space-y-4 shadow-sm">
+               <div className="flex flex-col gap-1">
+                  <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">PROJECT</h2>
+                  <p className="text-lg font-bold">Project Title</p>
+                  <p className="text-[10px] text-white/20 uppercase font-bold tracking-widest">Give your project a name</p>
+               </div>
+               <input
                 type="text"
-                placeholder="Project Title (e.g. History Quiz #1)"
+                placeholder="e.g. History Quiz #1"
                 value={testTitle}
                 onChange={(e) => setTestTitle(e.target.value)}
-                className="w-full py-5 px-6 bg-[#1A2333] border border-white/5 rounded-full focus:border-indigo-500 focus:bg-white/5 transition-all outline-none text-xl font-bold text-white placeholder:text-white/20 shadow-inner"
+                className="w-full py-4 px-6 bg-black/20 border border-white/5 rounded-xl focus:border-indigo-500/50 transition-all outline-none text-lg font-bold text-white placeholder:text-white/10"
               />
             </div>
 
-            {/* 02 Branding & Theme */}
-            <div className="space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="w-8 h-8 rounded-xl bg-[#0B1A2C] text-white flex items-center justify-center font-bold text-sm border border-white/10">02</span>
-                <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Branding & Theme</span>
-              </div>
-
-              <div className="p-4 bg-[#1A2333] rounded-[1.5rem] border border-white/5 shadow-inner">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3 px-2">Select Engine Theme</p>
-                <div className="flex flex-wrap gap-3 px-1">
+            {/* Theme Selection */}
+            <div className="bg-[#141C2B]/50 border border-white/5 rounded-xl p-8 space-y-6">
+               <div className="flex flex-col gap-1">
+                  <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">THEME</h2>
+                  <p className="text-[10px] text-white/20 uppercase font-bold tracking-widest">Choose your color theme</p>
+               </div>
+               <div className="flex gap-4">
                   {QUIZ_THEMES.map(theme => (
                     <button
                       key={theme.id}
                       onClick={() => setSelectedThemeId(theme.id)}
-                      className={`relative overflow-hidden rounded-xl h-14 flex-1 min-w-[30%] transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-[#1A2333] scale-[1.02]' : 'ring-1 ring-white/10 hover:ring-white/30'}`}
-                      style={{ backgroundColor: theme.bg }}
                       title={theme.name}
+                      className={`w-14 h-14 rounded-xl transition-all border-2 relative group overflow-hidden ${selectedThemeId === theme.id ? 'border-indigo-500 scale-110 shadow-lg' : 'border-white/5 hover:border-white/20'}`}
+                      style={{ backgroundColor: theme.bg }}
                     >
-                      <div className="absolute inset-0 bg-black/20"></div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-2 z-10">
-                         <div className="w-4 h-4 rounded-full border border-white/20 mb-1" style={{ backgroundColor: theme.accent }}></div>
-                         <span className="text-[8px] font-black uppercase text-white/90 tracking-widest leading-none drop-shadow-md">{theme.name.split(' ')[0]}</span>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.accent }}></div>
                       </div>
+                      {selectedThemeId === theme.id && (
+                        <div className="absolute bottom-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></div>
+                      )}
                     </button>
                   ))}
-                </div>
-              </div>
+               </div>
             </div>
 
-            {/* 03 Engine Logic */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="w-8 h-8 rounded-xl bg-[#0B1A2C] text-white flex items-center justify-center font-bold text-sm border border-white/10">03</span>
-                <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Engine Logic</span>
-              </div>
+            {/* Engine Settings Clusters */}
+            <div className="bg-[#141C2B]/50 border border-white/5 rounded-xl p-8 space-y-8">
+               <div className="flex flex-col gap-1">
+                  <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40">ENGINE SETTINGS</h2>
+               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Auto-Advance Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Auto-Advance</span>
-                    <button onClick={() => setIsAutomatic(!isAutomatic)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${isAutomatic ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${isAutomatic ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                  {isAutomatic && (
-                    <div className="px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
-                      <input type="range" min="5" max="60" step="5" value={autoTimeLimit} onChange={(e) => setAutoTimeLimit(parseInt(e.target.value))} className="w-full h-1.5 bg-[#0B1A2C] rounded-lg appearance-none cursor-pointer accent-indigo-400" />
-                      <p className="text-right text-[10px] font-bold text-indigo-400 mt-2">{autoTimeLimit}s per Slide</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Studio SFX Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio SFX</span>
-                    <button onClick={() => setEnableSound(!enableSound)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableSound ? 'bg-indigo-500 border-indigo-400' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableSound ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* AI Auto-Reader Block (Spans full width if expanded) */}
-                <div className={`flex flex-col gap-2 ${enableTTS ? 'md:col-span-2' : ''}`}>
-                      <div className="flex items-center justify-between px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Auto-Reader</span>
-                          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
-                            {ttsProvider === 'elevenlabs' ? 'ElevenLabs TTS' :
-                             ttsProvider === 'google' ? 'Google Cloud TTS' :
-                             ttsProvider === 'openai' ? 'OpenAI gpt-4o-mini-tts' : 'Gemini 3.1 (Hybrid)'}
-                          </span>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* PLAYBACK */}
+                  <div className="bg-black/20 border border-white/5 rounded-xl p-6 space-y-5">
+                     <div className="flex items-center gap-3 text-white/60">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">PLAYBACK</h3>
+                     </div>
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div>
+                              <p className="text-xs font-bold">Auto Advance</p>
+                              <p className="text-[9px] text-white/30 uppercase font-black tracking-widest mt-0.5">Move to next slide automatically</p>
+                           </div>
+                           <button onClick={() => setIsAutomatic(!isAutomatic)} className={`w-10 h-5 rounded-full relative transition-colors ${isAutomatic ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${isAutomatic ? 'left-5' : 'left-0.5'}`} />
+                           </button>
                         </div>
-                        <button onClick={() => setEnableTTS(!enableTTS)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${enableTTS ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                          <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableTTS ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                        </button>
-                      </div>
-                      
-                      {enableTTS && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Provider Selection */}
-                          <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem] col-span-1 md:col-span-2">
-                            <div className="flex flex-col flex-1">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">TTS Provider</span>
-                              <div className="flex bg-[#0B1A2C] rounded-lg border border-white/10 p-1">
-                                <button 
-                                  onClick={() => { setTtsProvider('elevenlabs'); setSelectedVoiceId(ELEVENLABS_VOICES[0].id); }}
-                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'elevenlabs' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                                > ElevenLabs
-                                </button>
-                                <button 
-                                  onClick={() => { setTtsProvider('gemini'); setSelectedVoiceId(GEMINI_VOICES[0].id); }}
-                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'gemini' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                                > Gemini 3.1
-                                </button>
-                                <button
-                                  onClick={() => { setTtsProvider('google'); setSelectedVoiceId(GOOGLE_VOICES[0].id); }}
-                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'google' ? 'bg-indigo-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                                > Google
-                                </button>
-                                <button
-                                  onClick={() => { setTtsProvider('openai'); setSelectedVoiceId(OPENAI_VOICES[0].id); }}
-                                  className={`flex-1 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded-md transition-all ${ttsProvider === 'openai' ? 'bg-emerald-500 text-white' : 'text-white/40 hover:text-white/80'}`}
-                                > OpenAI 🇮🇳
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                      <div className="flex items-center justify-between px-6 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
-                        <div className="flex flex-col w-full">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Voice Persona</span>
-                          <select 
-                            value={selectedVoiceId}
-                            onChange={(e) => setSelectedVoiceId(e.target.value)}
-                            className="bg-[#0B1A2C] text-white text-xs font-bold py-2 px-3 rounded-lg border border-white/10 outline-none w-full"
-                          >
-                            {ttsProvider === 'elevenlabs' && ELEVENLABS_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                            {ttsProvider === 'gemini' && GEMINI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                            {ttsProvider === 'google' && GOOGLE_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                            {ttsProvider === 'openai' && OPENAI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                          </select>
+                        <div className="flex items-center justify-between">
+                           <div>
+                              <p className="text-xs font-bold">AI Reader</p>
+                              <p className="text-[9px] text-white/30 uppercase font-black tracking-widest mt-0.5">Google Gemini reads your content</p>
+                           </div>
+                           <button onClick={() => setEnableTTS(!enableTTS)} className={`w-10 h-5 rounded-full relative transition-colors ${enableTTS ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${enableTTS ? 'left-5' : 'left-0.5'}`} />
+                           </button>
                         </div>
-                      </div>
-                      
-                      <div className="flex flex-col gap-2 px-4 py-3 bg-[#1A2333]/50 border border-white/5 rounded-[1.2rem]">
-                        <button
-                          onClick={async () => {
-                            try {
-                              setIsTestingTTS(true);
-                              setTtsTestError(null);
-                              SoundEngine.init();
-                              
-                              const ttsAdapter = await import('../services/ttsAdapter.ts');
-                              const data = await ttsAdapter.speakText("Testing the AI Auto-Reader.", selectedVoiceId, ttsProvider);
-                              
-                              if (data) {
-                                SoundEngine.playBase64Audio(data);
-                              } else {
-                                setTtsTestError("Failed to generate audio. Check your API key and network.");
-                              }
-                            } catch (err: any) {
-                              if (err.message === 'RATE_LIMIT_EXCEEDED') {
-                                setTtsTestError("Too many requests (429). Please wait a moment.");
-                              } else if (err.message === 'AUTH_ERROR') {
-                                setTtsTestError("Authentication failed. Check server config.");
-                              } else {
-                                setTtsTestError("An unexpected error occurred during the test.");
-                              }
-                              console.error(err);
-                            } finally {
-                              setIsTestingTTS(false);
-                            }
-                          }}
-                          disabled={isTestingTTS}
-                          className="w-full h-full text-[9px] font-bold uppercase tracking-widest text-indigo-300 hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isTestingTTS ? (
-                            <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" /><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" /></svg>
-                          )}
-                          <span>{isTestingTTS ? 'Testing...' : 'Test Connection'}</span>
+                     </div>
+                  </div>
+
+                  {/* AUDIO */}
+                  <div className="bg-black/20 border border-white/5 rounded-xl p-6 space-y-5">
+                     <div className="flex items-center gap-3 text-white/60">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">AUDIO</h3>
+                     </div>
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                           <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">TTS Provider</p>
+                           <div className="flex bg-black/40 p-1 rounded-lg gap-1 border border-white/5">
+                              {['elevenlabs', 'gemini', 'google', 'openai'].map(p => (
+                                 <button 
+                                    key={p} 
+                                    onClick={() => setTtsProvider(p as any)}
+                                    className={`flex-1 py-1.5 text-[8px] font-black uppercase tracking-widest rounded-md transition-all ${ttsProvider === p ? 'bg-indigo-500 text-white shadow-md' : 'text-white/30 hover:text-white/60'}`}
+                                 >
+                                    {p === 'elevenlabs' ? 'Eleven' : p.charAt(0).toUpperCase() + p.slice(1)}
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+                        <div className="space-y-2">
+                           <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Voice Persona</p>
+                           <div className="flex gap-2">
+                              <select 
+                                 value={selectedVoiceId}
+                                 onChange={(e) => setSelectedVoiceId(e.target.value)}
+                                 className="flex-grow bg-black/40 border border-white/5 text-white text-[10px] font-bold py-2 px-3 rounded-lg outline-none cursor-pointer"
+                              >
+                                 {ttsProvider === 'elevenlabs' && ELEVENLABS_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                                 {ttsProvider === 'gemini' && GEMINI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                                 {ttsProvider === 'google' && GOOGLE_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                                 {ttsProvider === 'openai' && OPENAI_VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                              </select>
+                              <button 
+                                 onClick={async () => {
+                                    setIsTestingTTS(true);
+                                    const ttsAdapter = await import('../services/ttsAdapter.ts');
+                                    const data = await ttsAdapter.speakText("Testing current voice selection.", selectedVoiceId, ttsProvider);
+                                    if (data) SoundEngine.playBase64Audio(data);
+                                    setIsTestingTTS(false);
+                                 }}
+                                 disabled={isTestingTTS}
+                                 className="px-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                              >
+                                 {isTestingTTS ? '...' : 'Test'}
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* ENHANCEMENTS */}
+                  <div className="bg-black/20 border border-white/5 rounded-xl p-6 space-y-5 md:col-span-2">
+                     <div className="flex items-center gap-3 text-white/60">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">ENHANCEMENTS</h3>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="flex items-center justify-between gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div>
+                              <p className="text-xs font-bold">Studio SFX</p>
+                              <p className="text-[9px] text-white/30 uppercase font-bold mt-0.5">Ambient sound</p>
+                           </div>
+                           <button onClick={() => setEnableSound(!enableSound)} className={`w-8 h-4 rounded-full relative transition-colors ${enableSound ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${enableSound ? 'left-4.5' : 'left-0.5'}`} />
+                           </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div>
+                              <p className="text-xs font-bold">Cinematic Slides</p>
+                              <p className="text-[9px] text-white/30 uppercase font-bold mt-0.5">Smooth transitions</p>
+                           </div>
+                           <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-8 h-4 rounded-full relative transition-colors ${addIntroOutro ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-4.5' : 'left-0.5'}`} />
+                           </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                           <div>
+                              <p className="text-xs font-bold">Sync Reveal</p>
+                              <p className="text-[9px] text-white/30 uppercase font-bold mt-0.5">Audio-text lock</p>
+                           </div>
+                           <button onClick={() => setRevealImageWithAnswer(!revealImageWithAnswer)} className={`w-8 h-4 rounded-full relative transition-colors ${revealImageWithAnswer ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${revealImageWithAnswer ? 'left-4.5' : 'left-0.5'}`} />
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* VISUAL */}
+                  <div className="bg-black/20 border border-white/5 rounded-xl p-6 space-y-5">
+                     <div className="flex items-center gap-3 text-white/60">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">VISUAL</h3>
+                     </div>
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <p className="text-xs font-bold">Canvas Format</p>
+                           <select 
+                              value={isVertical ? 'vertical' : 'landscape'}
+                              onChange={(e) => setIsVertical(e.target.value === 'vertical')}
+                              className="bg-black/40 border border-white/5 text-white/60 text-[9px] px-3 py-1.5 rounded-lg outline-none uppercase font-black tracking-widest"
+                           >
+                              <option value="landscape">16:9 Landscape</option>
+                              <option value="vertical">9:16 Vertical</option>
+                           </select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                           <p className="text-xs font-bold">With Picture</p>
+                           <button onClick={() => setWithPicture(!withPicture)} className={`w-10 h-5 rounded-full relative transition-colors ${withPicture ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${withPicture ? 'left-5' : 'left-0.5'}`} />
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* RECORDING */}
+                  <div className="bg-black/20 border border-white/5 rounded-xl p-6 space-y-5">
+                     <div className="flex items-center gap-3 text-white/60">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">RECORDING</h3>
+                     </div>
+                     <div className="flex items-center justify-between">
+                        <div>
+                           <p className="text-xs font-bold">Studio Record</p>
+                           <p className="text-[9px] text-white/30 uppercase font-bold mt-0.5">Record voice in Studio</p>
+                        </div>
+                        <button onClick={() => setRecordSession(!recordSession)} className={`w-10 h-5 rounded-full relative transition-colors ${recordSession ? 'bg-indigo-500' : 'bg-white/10'}`}>
+                           <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${recordSession ? 'left-5' : 'left-0.5'}`} />
                         </button>
-                        {ttsTestError && (
-                          <div className="text-[8px] font-bold text-rose-400 uppercase tracking-tight leading-tight animate-fade-in text-center">
-                            {ttsTestError}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Skip Options Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Skip Options TTS</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Save Credits</span>
-                    </div>
-                    <button onClick={() => setOptionsOff(!optionsOff)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${optionsOff ? 'bg-rose-500/20 border-rose-500/30' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${optionsOff ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-rose-400' : 'left-0.5 bg-white/50'}`} />
-                    </button>
+                     </div>
                   </div>
-                </div>
-
-                {/* Cinematic Slides Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Cinematic Slides</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Intro & Outro</span>
-                    </div>
-                    <button onClick={() => setAddIntroOutro(!addIntroOutro)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${addIntroOutro ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${addIntroOutro ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Canvas Format Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Canvas Format</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{isVertical ? 'V/9:16 (Shorts)' : 'H/16:9 (Desktop)'}</span>
-                    </div>
-                    <button onClick={() => setIsVertical(!isVertical)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${isVertical ? 'bg-fuchsia-500/20 border-fuchsia-500/40' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${isVertical ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-fuchsia-400' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* With Picture Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">With Picture</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Show Image (1:1/4:3)</span>
-                    </div>
-                    <button onClick={() => setWithPicture(!withPicture)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${withPicture ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${withPicture ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-
-                  {withPicture && (
-                    <div className="flex items-center justify-between px-6 py-3 bg-white/5 border border-white/10 rounded-[1.2rem] animate-fade-in">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Sync Reveal</span>
-                        <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Image hits with answer</span>
-                      </div>
-                      <button onClick={() => setRevealImageWithAnswer(!revealImageWithAnswer)} className={`w-10 h-5 rounded-full relative transition-colors border shrink-0 ${revealImageWithAnswer ? 'bg-emerald-500/30 border-emerald-500/50' : 'bg-transparent border-white/20'}`}>
-                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${revealImageWithAnswer ? 'left-5 shadow-[0_0_10px_rgba(16,185,129,0.5)] bg-emerald-400' : 'left-0.5 bg-white/50'}`} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Studio Record Block */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">Studio Record</span>
-                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">WebM Output</span>
-                    </div>
-                    <button onClick={() => setRecordSession(!recordSession)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${recordSession ? 'bg-white/20 border-white/10' : 'bg-transparent border-white/20'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${recordSession ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-0.5 bg-white/50'}`} />
-                    </button>
-                  </div>
-                  {recordSession && (
-                    <div className="px-4 py-3 bg-rose-500/5 rounded-[1.2rem] border border-rose-500/10">
-                      <p className="text-[9px] font-bold text-rose-300/80 uppercase tracking-widest leading-relaxed">
-                        ⚠️ Select <span className="text-white border-b border-white/50">"This Tab"</span> in popup to auto-crop.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: DATA & LAUNCH */}
-          <div className="flex flex-col h-full space-y-8">
-            <div className="flex flex-col space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="w-8 h-8 rounded-xl bg-emerald-400 text-[#0E1521] flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(52,211,153,0.3)]">04</span>
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Data Ingestion</span>
-              </div>
+          {/* RIGHT PANEL: DATA & ACTION */}
+          <div className="space-y-6 lg:sticky lg:top-6 h-fit">
+            
+            {/* DATA INPUT */}
+            <div className="bg-[#141C2B]/50 border border-white/5 rounded-xl p-6 space-y-6">
+               <div className="flex items-center gap-3 text-white/60">
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">DATA INPUT</h2>
+               </div>
 
-              <div className="bg-[#1A2333] border border-white/5 rounded-full p-1.5 flex gap-1 shadow-inner">
-                <button onClick={() => setActiveTab('upload')} className={`flex-1 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'upload' ? 'bg-[#0B1A2C] text-white shadow-md border border-white/5' : 'text-white/30 hover:text-white/60'}`}>CSV File</button>
-                <button onClick={() => setActiveTab('paste')} className={`flex-1 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'paste' ? 'bg-[#0B1A2C] text-white shadow-md border border-white/5' : 'text-white/30 hover:text-white/60'}`}>Quick Paste</button>
-              </div>
+               <div className="bg-black/30 rounded-full p-1 flex gap-1 border border-white/5">
+                  <button onClick={() => setActiveTab('upload')} className={`flex-1 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'upload' ? 'bg-[#1A2333] text-white shadow-sm border border-white/10' : 'text-white/20 hover:text-white/40'}`}>CSV Upload</button>
+                  <button onClick={() => setActiveTab('paste')} className={`flex-1 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'paste' ? 'bg-[#1A2333] text-white shadow-sm border border-white/10' : 'text-white/20 hover:text-white/40'}`}>Paste Text</button>
+               </div>
 
-              <div className="relative group flex-grow h-[280px]">
-                {activeTab === 'upload' ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`w-full h-full flex flex-col items-center justify-center border-2 border-dashed rounded-[2.5rem] transition-all cursor-pointer ${loadedQuestions ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 hover:border-white/30 bg-[#1A2333]/50'}`}
-                  >
-                    {loadedQuestions ? (
-                      <div className="text-center">
-                        <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg></div>
-                        <p className="text-lg font-bold text-emerald-400 uppercase tracking-widest">{loadedQuestions.length} Questions</p>
-                        <p className="text-[10px] text-emerald-400/50 uppercase tracking-widest mt-2">Ready for broadcast</p>
-                      </div>
-                    ) : (
-                      <div className="text-center opacity-40 group-hover:opacity-100 transition-opacity">
-                        <div className="w-12 h-12 bg-[#0B1A2C] border border-white/10 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-inner"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">Click to Upload</p>
-                      </div>
-                    )}
-                    <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
-                  </div>
-                ) : (
-                  <div className="relative h-full">
-                    <textarea
-                      value={pastedText}
-                      onChange={(e) => setPastedText(e.target.value)}
-                      placeholder="Paste your CSV content here..."
-                      className="w-full h-full p-8 bg-[#1A2333]/80 border border-white/5 rounded-[2.5rem] focus:border-indigo-500/50 focus:bg-[#1A2333] transition-all outline-none resize-none font-mono text-[11px] leading-max text-white/70 placeholder:text-white/20 shadow-inner"
-                    />
-                    <button
-                      onClick={handlePasteProcess}
-                      className="absolute bottom-6 right-6 px-6 py-2.5 bg-[#0B1A2C] text-white text-[9px] font-bold uppercase tracking-widest rounded-full hover:bg-white/10 transition-colors border border-white/10"
-                    >
-                      Process Text
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* LIVE PREVIEW MODULE */}
-            <div className="flex-grow flex flex-col justify-end pb-2">
-              <div className="bg-[#1A2333]/50 border border-white/5 rounded-[2rem] p-5 shadow-inner backdrop-blur-sm">
-                 <div className="flex items-center justify-between mb-4">
-                   <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full flex items-center justify-center bg-white/10" style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent }}></div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Output Preview</span>
-                   </div>
-                   <span className="text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 bg-[#0B1A2C] border border-white/5 rounded-full text-white/40">{isVertical ? 'V/9:16' : 'H/16:9'}</span>
-                 </div>
-                 
-                 <div className="w-full flex items-center justify-center p-4 bg-[#0B1A2C]/50 rounded-[1.5rem] border border-white/5 h-[160px] overflow-hidden shadow-inner">
-                    <div 
-                      className={`relative flex flex-col shadow-[0_10px_20px_rgba(0,0,0,0.5)] rounded-lg overflow-hidden transition-all duration-700 ${isVertical ? 'aspect-[9/16] h-[130px] w-auto border-2' : 'aspect-video w-[200px] border-[3px]'}`}
-                      style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).bg, borderColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).card }}
-                    >
-                      {/* Top Progress Bar */}
-                      <div className="w-full h-1 bg-white/10 shrink-0">
-                         <div className="h-full w-1/3 transition-colors duration-500" style={{ backgroundColor: (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent }}></div>
-                      </div>
-
-                      <div className={`p-2 flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center justify-center gap-1.5' : 'flex-row items-center justify-center gap-2.5') : 'flex-col items-center justify-center'} transition-all`}>
-                         
-                         {/* Fake Image (Vertical) */}
-                         {withPicture && isVertical && (
-                           <div className="w-4/5 aspect-[4/3] rounded-sm bg-white/10 shrink-0 border border-white/5 shadow-sm"></div>
-                         )}
-
-                         {/* Fake Text */}
-                         <div className={`flex flex-col gap-1 w-full items-center justify-center ${withPicture && !isVertical ? 'flex-1' : ''}`}>
-                            <div className="w-4/5 h-1.5 bg-white/20 rounded-full"></div>
-                            <div className="w-3/5 h-1.5 bg-white/20 rounded-full"></div>
-                         </div>
-
-                         {/* Fake Image (Landscape) */}
-                         {withPicture && !isVertical && (
-                           <div className="w-10 h-10 aspect-square rounded-sm shrink-0 bg-white/10 border border-white/5 shadow-sm"></div>
-                         )}
-
-                      </div>
-
-                      {/* Fake Options */}
-                      <div className={`p-1.5 shrink-0 grid ${isVertical ? 'grid-cols-1 gap-0.5' : 'grid-cols-2 gap-1.5'} w-full transition-all`}>
-                         {[1, 2].map(i => (
-                           <div key={`opt-${i}`} className={`flex items-center gap-1.5 px-1.5 rounded-sm bg-white border border-transparent shadow-sm ${isVertical ? 'h-[12px]' : 'h-[16px]'}`}>
-                             <div className={`shrink-0 rounded-[2px] bg-slate-200 ${isVertical ? 'w-1.5 h-1.5' : 'w-2.5 h-2.5'}`}></div>
-                             <div className="h-0.5 bg-slate-200 rounded-full w-2/3"></div>
+               <div className="relative group min-h-[160px]">
+                  {activeTab === 'upload' ? (
+                     <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`w-full h-full min-h-[160px] flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer border border-white/5 bg-black/20 hover:bg-black/30 overflow-hidden relative`}
+                     >
+                        <div className="text-center p-6">
+                           <div className="w-10 h-10 bg-[#1A2333] border border-white/10 rounded-xl mx-auto mb-4 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                              <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                            </div>
-                         ))}
-                         {[3, 4].map(i => (
-                           <div key={`opt-${i}`} className={`flex items-center gap-1.5 px-1.5 rounded-sm shadow-sm ${isVertical ? 'h-[12px]' : 'h-[16px]'}`} style={{ backgroundColor: i === 3 ? (QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0]).accent : 'white' }}>
-                             <div className={`shrink-0 rounded-[2px] bg-white ${isVertical ? 'w-1.5 h-1.5' : 'w-2.5 h-2.5'}`}></div>
-                             <div className="h-0.5 bg-white/30 rounded-full w-2/3"></div>
+                           <p className="text-xs font-bold text-white">Upload CSV File</p>
+                           <p className="text-[9px] text-white/20 uppercase font-black mt-1">Drag and drop or click to browse</p>
+                        </div>
+                        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
+                        {loadedQuestions && (
+                           <div className="absolute inset-0 bg-indigo-500/10 backdrop-blur-sm flex flex-col items-center justify-center border-2 border-indigo-500/50 rounded-xl">
+                              <p className="text-indigo-400 font-black text-xs uppercase tracking-widest">{loadedQuestions.length} Questions Loaded</p>
+                              <button onClick={(e) => { e.stopPropagation(); setLoadedQuestions(null); }} className="mt-2 text-[9px] text-white/40 hover:text-white uppercase font-black">Reset</button>
                            </div>
-                         ))}
-                      </div>
+                        )}
+                     </div>
+                  ) : (
+                     <textarea
+                        value={pastedText}
+                        onChange={(e) => setPastedText(e.target.value)}
+                        placeholder="Paste your CSV content here..."
+                        className="w-full h-[160px] p-4 bg-black/20 border border-white/5 rounded-xl transition-all outline-none resize-none font-mono text-[10px] text-white/50 focus:text-white/80"
+                     />
+                  )}
+               </div>
+            </div>
 
-                    </div>
-                 </div>
+            {/* PREVIEW */}
+            <div className="bg-[#141C2B]/50 border border-white/5 rounded-xl p-6 space-y-4">
+               <div className="flex items-center justify-between text-white/60">
+                  <div className="flex items-center gap-3">
+                     <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">PREVIEW</h2>
+                  </div>
+                  <span className="text-[8px] font-black bg-white/5 px-2 py-0.5 rounded border border-white/10 uppercase tracking-widest">{isVertical ? '9:16' : '16:9'}</span>
+               </div>
+               
+               <div className="w-full aspect-video bg-black/40 rounded-lg overflow-hidden border border-white/5 relative flex items-center justify-center">
+                  <div className="relative w-4/5 aspect-video border-[3px] border-white/5 rounded shadow-2xl opacity-40 group-hover:opacity-100 transition-opacity overflow-hidden flex flex-col" style={{ backgroundColor: currentTheme.bg }}>
+                     <div className="w-full h-1 bg-indigo-500/30"></div>
+                     <div className="flex-grow p-3 flex flex-col gap-2">
+                        <div className="w-4/5 h-1 bg-white/10 rounded-full"></div>
+                        <div className="w-2/3 h-1 bg-white/10 rounded-full"></div>
+                        <div className="mt-auto grid grid-cols-2 gap-2">
+                           <div className="h-6 bg-white/5 border border-white/5 rounded"></div>
+                           <div className="h-6 bg-white/10 border border-white/10 rounded" style={{ backgroundColor: currentTheme.accent + '20' }}></div>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-4 text-center">
+                     <p className="text-[9px] text-white/20 font-black uppercase tracking-widest">Preview logic ready</p>
+                  </div>
+               </div>
+            </div>
+
+            {/* GENERATE BUTTON */}
+            <button
+               onClick={handleStartSimulation}
+               disabled={!canStart}
+               className={`w-full py-5 rounded-xl font-black uppercase text-xs tracking-[0.4em] transition-all shadow-xl group flex items-center justify-center gap-3 active:scale-[0.98]
+               ${canStart
+                   ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/10'
+                   : 'bg-white/5 text-white/10 border border-white/5 cursor-not-allowed shadow-none'}`}
+            >
+               <svg className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${canStart ? 'text-white' : 'text-white/10'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+               Generate & Launch Studio
+            </button>
+
+            {error && (
+              <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[9px] font-black text-center uppercase tracking-widest animate-fade-in shadow-sm">
+                {error}
               </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={handleStartSimulation}
-                disabled={!canStart}
-                className={`w-full py-6 rounded-full font-bold uppercase text-xs tracking-[0.4em] transition-all shadow-xl
-                ${canStart
-                    ? 'bg-[#1A2333] text-white hover:bg-white/10 border border-white/10 hover:border-white/20'
-                    : 'bg-[#1A2333]/50 text-white/10 border border-white/5 cursor-not-allowed shadow-none'}`}
-              >
-                Launch Studio
-              </button>
-
-              {error && (
-                <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full text-[9px] font-bold text-center uppercase tracking-widest">
-                  {error}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
