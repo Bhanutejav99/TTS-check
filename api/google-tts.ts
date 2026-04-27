@@ -32,10 +32,22 @@ export default async function handler(req: Request) {
       : { text: body.text };
 
     // Standard Google Cloud TTS synthesis request
-    // Indian accent tuning: slightly lower pitch + slower rate = more grounded Indian cadence
-    const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
-    const defaultPitch = isIndianVoice ? -1.0 : 0;       // deeper tone for Indian English
-    const defaultRate  = isIndianVoice ? 0.95 : 1.0;      // slower, deliberate pacing
+    // Chirp / Chirp-HD / Chirp3-HD voices reject custom pitch, speakingRate, and effectsProfileId.
+    // Only apply Indian accent tuning to Neural2 / WaveNet / Standard voices.
+    const voiceName = body.voiceName || 'en-IN-Neural2-D';
+    const isChirp = /Chirp/i.test(voiceName);
+    
+    // Build audioConfig based on voice capability
+    const audioConfig: Record<string, any> = { audioEncoding: 'MP3' };
+    
+    if (!isChirp) {
+      // Neural2/WaveNet/Standard — apply Indian accent tuning
+      const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
+      audioConfig.pitch = body.pitch ?? (isIndianVoice ? -1.0 : 0);
+      audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.95 : 1.0);
+      audioConfig.effectsProfileId = ['large-home-entertainment-class-device'];
+    }
+    // Chirp HD: leave audioConfig at just { audioEncoding: 'MP3' } — no tuning
 
     const googleResponse = await fetch(url, {
       method: 'POST',
@@ -46,14 +58,9 @@ export default async function handler(req: Request) {
         input: inputPayload,
         voice: { 
           languageCode: body.languageCode || 'en-IN', 
-          name: body.voiceName || 'en-IN-Neural2-D' 
+          name: voiceName
         },
-        audioConfig: { 
-          audioEncoding: 'MP3',
-          pitch: body.pitch ?? defaultPitch,
-          speakingRate: body.speakingRate ?? defaultRate,
-          effectsProfileId: ['large-home-entertainment-class-device']  // richer audio profile
-        }
+        audioConfig
       }),
     });
 
