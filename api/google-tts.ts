@@ -32,6 +32,11 @@ export default async function handler(req: Request) {
       : { text: body.text };
 
     // Standard Google Cloud TTS synthesis request
+    // Indian accent tuning: slightly lower pitch + slower rate = more grounded Indian cadence
+    const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
+    const defaultPitch = isIndianVoice ? -1.0 : 0;       // deeper tone for Indian English
+    const defaultRate  = isIndianVoice ? 0.95 : 1.0;      // slower, deliberate pacing
+
     const googleResponse = await fetch(url, {
       method: 'POST',
       headers: {
@@ -45,8 +50,9 @@ export default async function handler(req: Request) {
         },
         audioConfig: { 
           audioEncoding: 'MP3',
-          pitch: 0,
-          speakingRate: 1.0
+          pitch: body.pitch ?? defaultPitch,
+          speakingRate: body.speakingRate ?? defaultRate,
+          effectsProfileId: ['large-home-entertainment-class-device']  // richer audio profile
         }
       }),
     });

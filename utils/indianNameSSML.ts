@@ -105,10 +105,11 @@ const FRAGMENT_REGEX = buildFragmentRegex();
 
 /**
  * Converts plain quiz text into SSML with <lang xml:lang="hi-IN"> tags
- * wrapped around detected Indian proper nouns.
+ * wrapped around detected Indian proper nouns, plus Indian English prosody
+ * applied to the entire speech.
  *
  * @param text - The raw quiz question/answer text
- * @returns SSML-wrapped string ready for Google Cloud TTS
+ * @returns SSML-wrapped string ready for Google Cloud TTS (Neural2/WaveNet only)
  */
 export function wrapIndianNamesInSSML(text: string): string {
   // Track which character ranges have already been wrapped (to prevent double-wrapping)
@@ -121,22 +122,21 @@ export function wrapIndianNamesInSSML(text: string): string {
   });
 
   // Pass 2: Wrap single-word Indian fragments (only if not already inside a <lang> tag)
-  // We need to re-process the result string, so we use a simple approach:
-  // check if the match is already inside a <lang> block
   result = result.replace(FRAGMENT_REGEX, (match, _p1, offset) => {
-    // Check if this position is already inside a <lang>...</lang> block
     const beforeMatch = result.substring(0, offset);
     const openTags = (beforeMatch.match(/<lang /g) || []).length;
     const closeTags = (beforeMatch.match(/<\/lang>/g) || []).length;
     if (openTags > closeTags) {
-      // Already inside a <lang> tag — don't double-wrap
       return match;
     }
     return `<lang xml:lang="hi-IN">${match}</lang>`;
   });
 
-  // Wrap in <speak> root element (required for SSML)
-  return `<speak>${result}</speak>`;
+  // Wrap entire speech in Indian English prosody:
+  //  - rate="slow" → deliberate, measured Indian English pacing
+  //  - pitch="-1st" → slightly deeper, more authoritative tone
+  // This gives the FULL speech an Indian cadence, not just the names.
+  return `<speak><prosody rate="slow" pitch="-1st">${result}</prosody></speak>`;
 }
 
 /**
