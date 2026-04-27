@@ -26,6 +26,11 @@ export default async function handler(req: Request) {
   try {
     const body = await req.json();
     
+    // Build the input — use SSML if the client sends it, otherwise plain text
+    const inputPayload = body.ssml
+      ? { ssml: body.ssml }
+      : { text: body.text };
+
     // Standard Google Cloud TTS synthesis request
     const googleResponse = await fetch(url, {
       method: 'POST',
@@ -33,7 +38,7 @@ export default async function handler(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: { text: body.text },
+        input: inputPayload,
         voice: { 
           languageCode: body.languageCode || 'en-IN', 
           name: body.voiceName || 'en-IN-Neural2-D' 

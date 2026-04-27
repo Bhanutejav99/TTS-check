@@ -6,6 +6,8 @@ const pendingRequests = new Map<string, Promise<string | null>>();
 const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
 const DEFAULT_LANG = 'en-IN';
 
+import { wrapIndianNamesInSSML } from '../utils/indianNameSSML.ts';
+
 export const speakText = async (text: string, voiceName?: string): Promise<string | null> => {
     const targetVoice = voiceName || DEFAULT_VOICE;
     const cacheKey = `${targetVoice}-${text}`;
@@ -22,11 +24,15 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
         try {
             console.log("Google Cloud TTS: Generating speech for:", text.substring(0, 60) + "...");
             
+            // Strip HTML tags and generate SSML with Indian name pronunciation hints
+            const cleanText = text.replace(/<[^>]+>/g, '').trim();
+            const ssmlText = wrapIndianNamesInSSML(cleanText);
+
             const response = await fetch('/api/google-tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    text: text.replace(/<[^>]+>/g, '').trim(),
+                    ssml: ssmlText,
                     voiceName: targetVoice,
                     languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
                 })
