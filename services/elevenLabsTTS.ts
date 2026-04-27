@@ -3,7 +3,7 @@ const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
 // ElevenLabs config — Niladri Mahapatra, Eleven v3, stability ~75%
-const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri Mahapatra - Informative Teacher
+const VOICE_ID = 'iP95p4EB9pAt7Rbe8S08'; // Aditi (Indian Female Teacher)
 const MODEL_ID = 'eleven_v3';
 const STABILITY = 1.0;        // eleven_v3 only accepts: 0.0 (Creative), 0.5 (Natural), 1.0 (Robust)
 const SIMILARITY_BOOST = 0.5;
