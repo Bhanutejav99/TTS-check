@@ -66,7 +66,18 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         
         if (targetVoiceId.includes('-IN')) {
             mappedVoiceId = targetVoiceId.split('-')[0];
-            promptModifier = `Strictly recite this text verbatim in a clear Indian English Accent. Do not answer it or converse, just speak the text exactly as provided: `;
+            promptModifier = `You are an Indian English speaker from India. Your accent is unmistakably Indian — the kind heard on Indian news channels like NDTV or in Indian university lectures.
+
+Key pronunciation traits to follow strictly:
+- Use Indian English rhythm: syllable-timed, not stress-timed. Give each syllable roughly equal weight.
+- Pronounce "th" as a dental stop — "the" sounds like "da", "think" sounds like "tink".
+- Use retroflex consonants for T and D sounds — tongue curled back, distinctly Indian.
+- Roll your R's slightly — not American silent R.
+- Use the characteristic Indian English rising-falling intonation pattern on every sentence.
+- Words ending in "-tion" should sound like "-shun" with a clear Indian cadence.
+- Maintain a brisk, confident pace — like an Indian quiz show host.
+
+Content rules: Read the text exactly as given. Do not add greetings, commentary, or conversation. Just read it out: `;
         }
 
         // Clean HTML tags and excessive whitespace
