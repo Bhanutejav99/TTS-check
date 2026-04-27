@@ -24,18 +24,28 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
         try {
             console.log("Google Cloud TTS: Generating speech for:", text.substring(0, 60) + "...");
             
-            // Strip HTML tags and generate SSML with Indian name pronunciation hints
+            // Strip HTML tags
             const cleanText = text.replace(/<[^>]+>/g, '').trim();
-            const ssmlText = wrapIndianNamesInSSML(cleanText);
+
+            // Chirp / Chirp-HD / Chirp3-HD voices do NOT support SSML <lang> tags.
+            // Only use SSML for Neural2 / WaveNet / Standard voices.
+            const supportsSSML = /Neural2|WaveNet|Standard/i.test(targetVoice);
+
+            const requestBody: Record<string, any> = {
+                voiceName: targetVoice,
+                languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
+            };
+
+            if (supportsSSML) {
+                requestBody.ssml = wrapIndianNamesInSSML(cleanText);
+            } else {
+                requestBody.text = cleanText;
+            }
 
             const response = await fetch('/api/google-tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ssml: ssmlText,
-                    voiceName: targetVoice,
-                    languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
