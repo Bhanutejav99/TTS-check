@@ -18,7 +18,7 @@ interface QuizInterfaceProps {
 // Estimate timer duration based on question + options word count and TTS speaking rate
 const TTS_WORDS_PER_SECOND = 2.0;
 const THINKING_GAP = 2;       // seconds of silence between question readout and answer
-const ANSWER_LINGER = 2;      // seconds to stay on screen after reading out the answer
+const ANSWER_LINGER = 1;      // seconds to stay on screen after reading out the answer
 const MIN_TIMER = 10;         // minimum timer in seconds
 
 // Calculate how long the answer phrase will take to speak
