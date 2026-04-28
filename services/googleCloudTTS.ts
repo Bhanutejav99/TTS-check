@@ -15,7 +15,7 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
     if (!cleanText) return null;
 
     const targetVoice = voiceName || DEFAULT_VOICE;
-    const cacheKey = `google-v4-${targetVoice}-${cleanText}`;
+    const cacheKey = `google-v5-${targetVoice}-${cleanText}`;
     
     // 1. Memory cache (fastest)
     if (ttsCache.has(cacheKey)) {

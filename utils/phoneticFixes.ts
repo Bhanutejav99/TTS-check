@@ -7,10 +7,13 @@
  */
 
 const PHONETIC_MAP: Record<string, string> = {
-    // Nasalized 'n' fixes (Mughal/Islamic names)
+const PHONETIC_MAP: Record<string, string> = {
+    // --- MUGHAL & ISLAMIC HISTORY ---
+    // Nasalized 'n' fixes
     "Humayun": "Huma-yunn",
     "Jahan": "Ja-hann",
     "Shahjahan": "Shah Ja-hann",
+    "Jahangir": "Ja-haan-geer",
     
     // Deen / Uddin fixes
     "Qutbuddin": "Kutub-ud-deen",
@@ -20,31 +23,53 @@ const PHONETIC_MAP: Record<string, string> = {
     "Siraj-ud-Daulah": "Siraj ud-Dowla",
     "Shuja-ud-Daulah": "Shooja ud-Dowla",
 
-    // Consonant / Vowel corrections
+    // Rulers & Dynasties
     "Aibak": "Eye-buck",
     "Iltutmish": "Il-toot-mish",
     "Babar": "Baa-bur",
     "Babur": "Baa-bur",
+    "Akbar": "Uk-bur",
+    "Aurangzeb": "Orang-zabe",
     "Ghazni": "Ghaz-nee",
     "Ghori": "Gho-ree",
+    "Mahmud": "Muh-mood",
+    "Qasim": "Kaa-sim",
     "Khilji": "Kill-jee",
     "Tughlaq": "Toogh-luck",
     "Lodi": "Lo-dee",
+    "Suri": "Soo-ree",
+    "Sher Shah": "Share Shah",
     "Mughal": "Moo-gull",
     "Mughals": "Moo-gulls",
-    "Aurangzeb": "Orang-zabe",
     "Tipu": "Tee-poo",
-    "Rajput": "Raaj-poot",
-    "Rajputs": "Raaj-poots",
-    "Maratha": "Ma-raa-tha",
-    "Awadh": "A-wudh",
-    "Oudh": "A-wudh",
     "Nawab": "Na-waab",
+    "Bahmani": "Bah-ma-nee",
 
-    // Ancient India fixes
+    // --- ANCIENT INDIA ---
+    // Empires & Kings
     "Maurya": "Mow-rya",
+    "Chandragupta": "Chun-dra-goop-ta",
+    "Samudragupta": "Sa-mu-dra-goop-ta",
     "Ashoka": "A-sho-ka",
+    "Harsha": "Har-sha",
+    "Vardhana": "Var-dha-na",
+    "Chola": "Cho-la",
+    "Chera": "Che-ra",
+    "Pandya": "Paan-dya",
+    "Pallava": "Pul-la-va",
+    "Chalukya": "Cha-look-ya",
+    "Rashtrakuta": "Raash-tra-koo-ta",
     "Chanakya": "Cha-nuk-ya",
+    "Aryabhata": "Aar-ya-bha-ta",
+    "Kalidasa": "Kaa-li-daa-sa",
+
+    // Places
+    "Harappa": "Ha-rup-pa",
+    "Mohenjo-Daro": "Mo-hen-jo-daa-ro",
+    "Pataliputra": "Pa-ta-li-poo-tra",
+    "Magadha": "Mu-ga-dha",
+
+    // Religious / Cultural Terms
     "Vedas": "Vay-dus",
     "Upanishads": "Oo-pan-ish-uds",
     "Brahmin": "Braah-min",
@@ -52,8 +77,48 @@ const PHONETIC_MAP: Record<string, string> = {
     "Kshatriya": "Ksha-tree-ya",
     "Vaishya": "Vy-shya",
     "Shudra": "Shoo-dra",
+    "Mahavira": "Ma-haa-vee-ra",
+    "Gautama": "Gow-ta-ma",
+    "Buddha": "Bood-dha",
 
-    // Common suffixes
+    // --- MEDIEVAL & REGIONAL EMPIRES ---
+    "Rajput": "Raaj-poot",
+    "Rajputs": "Raaj-poots",
+    "Prithviraj": "Prith-vee-raaj",
+    "Chauhan": "Chow-haan",
+    "Maratha": "Ma-raa-tha",
+    "Shivaji": "Shi-vaa-jee",
+    "Peshwa": "Pay-shwa",
+    "Vijayanagara": "Vi-jay-na-ga-ra",
+    "Krishnadevaraya": "Krish-na-day-va-raa-ya",
+    "Awadh": "A-wudh",
+    "Oudh": "A-wudh",
+    "Bhakti": "Bhuk-tee",
+    "Sufi": "Soo-fee",
+    "Khalsa": "Khaal-sa",
+
+    // --- MODERN HISTORY (FREEDOM STRUGGLE) ---
+    // Leaders
+    "Gandhi": "Gaan-dhee",
+    "Nehru": "Nay-roo",
+    "Subhash": "Soo-bhaash",
+    "Bhagat": "Bha-gut",
+    "Azad": "Aa-zaad",
+    "Savarkar": "Saa-var-kar",
+    "Ambedkar": "Um-bade-kar",
+    "Patel": "Pa-tale",
+    "Tilak": "Ti-luck",
+    "Gokhale": "Go-kha-lay",
+    "Naoroji": "Now-ro-jee",
+    
+    // Movements & Terms
+    "Satyagraha": "Sut-yaa-gra-ha",
+    "Swadeshi": "Swa-day-shee",
+    "Swaraj": "Swa-raaj",
+    "Zamindar": "Za-meen-daar",
+    "Jallianwala": "Jal-li-yan-waa-la",
+
+    // --- COMMON SUFFIXES ---
     "pur": "poor", // e.g. Kanpur -> Kan-poor
     "abad": "a-baad" // e.g. Allahabad -> Allah-a-baad
 };
