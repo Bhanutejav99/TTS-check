@@ -7,6 +7,7 @@ const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
 const DEFAULT_LANG = 'en-IN';
 
 import { wrapIndianNamesInSSML } from '../utils/indianNameSSML.ts';
+import { applyPhoneticFixes } from '../utils/phoneticFixes.ts';
 
 export const speakText = async (text: string, voiceName?: string): Promise<string | null> => {
     // Strip HTML and normalize whitespace for consistent cache keys
@@ -14,7 +15,7 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
     if (!cleanText) return null;
 
     const targetVoice = voiceName || DEFAULT_VOICE;
-    const cacheKey = `google-v2-${targetVoice}-${cleanText}`;
+    const cacheKey = `google-v3-${targetVoice}-${cleanText}`;
     
     // 1. Memory cache (fastest)
     if (ttsCache.has(cacheKey)) {
@@ -38,10 +39,13 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
                 languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
             };
 
+            // Apply phonetic English fixes so Google doesn't use Hindi nasal vowels
+            const phoneticText = applyPhoneticFixes(cleanText);
+
             if (supportsSSML) {
-                requestBody.ssml = wrapIndianNamesInSSML(cleanText);
+                requestBody.ssml = wrapIndianNamesInSSML(phoneticText);
             } else {
-                requestBody.text = cleanText;
+                requestBody.text = phoneticText;
             }
 
             const response = await fetch('/api/google-tts', {
