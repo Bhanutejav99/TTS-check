@@ -1,3 +1,6 @@
+const ttsCache = new Map<string, string>();
+const pendingRequests = new Map<string, Promise<string | null>>();
+
 // ─── Fixed Config ─────────────────────────────────────────────
 // Single stable voice — alloy responds best to accent instructions
 const FIXED_VOICE = 'alloy';
@@ -29,46 +32,69 @@ export const speakText = async (text: string, _voicePresetId?: string): Promise<
     const cleaned = cleanText(text);
     if (!cleaned) return null;
 
-    try {
-        console.log("OpenAI TTS: Generating for:", cleaned.substring(0, 80));
+    const cacheKey = `openai-${FIXED_VOICE}-${cleaned}`;
 
-        const response = await fetch('/api/openai-tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: cleaned,
-                voice: FIXED_VOICE,
-                instructions: MCQ_INSTRUCTION,
-                speed: 1.0,  // alloy at natural speed is already well-paced
-            })
-        });
+    if (ttsCache.has(cacheKey)) {
+        return ttsCache.get(cacheKey)!;
+    }
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("OpenAI TTS: API error", response.status, errorData);
-            if (response.status === 401 || response.status === 403) throw new Error("AUTH_ERROR");
-            if (response.status === 429) throw new Error("RATE_LIMIT_EXCEEDED");
+    if (pendingRequests.has(cacheKey)) {
+        return pendingRequests.get(cacheKey)!;
+    }
+
+    const requestPromise = (async () => {
+        try {
+            console.log("OpenAI TTS: Generating for:", cleaned.substring(0, 80));
+
+            const response = await fetch('/api/openai-tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: cleaned,
+                    voice: FIXED_VOICE,
+                    instructions: MCQ_INSTRUCTION,
+                    speed: 1.0,  // alloy at natural speed is already well-paced
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("OpenAI TTS: API error", response.status, errorData);
+                if (response.status === 401 || response.status === 403) throw new Error("AUTH_ERROR");
+                if (response.status === 429) throw new Error("RATE_LIMIT_EXCEEDED");
+                return null;
+            }
+
+            const data = await response.json();
+            const base64Audio = data.audioContent;
+
+            if (base64Audio) {
+                console.log("OpenAI TTS: Received audio, length:", base64Audio.length);
+                ttsCache.set(cacheKey, base64Audio);
+                return base64Audio;
+            }
+
+            console.warn("OpenAI TTS: No audio content in response");
+            return null;
+        } catch (error: any) {
+            console.error("OpenAI TTS: Error", error);
+            if (error.message === "AUTH_ERROR" || error.message === "RATE_LIMIT_EXCEEDED") throw error;
             return null;
         }
+    })();
 
-        const data = await response.json();
-        const base64Audio = data.audioContent;
-
-        if (base64Audio) {
-            console.log("OpenAI TTS: Received audio, length:", base64Audio.length);
-            return base64Audio;
-        }
-
-        console.warn("OpenAI TTS: No audio content in response");
-        return null;
-    } catch (error: any) {
-        console.error("OpenAI TTS: Error", error);
-        if (error.message === "AUTH_ERROR" || error.message === "RATE_LIMIT_EXCEEDED") throw error;
-        return null;
+    pendingRequests.set(cacheKey, requestPromise);
+    try {
+        return await requestPromise;
+    } finally {
+        pendingRequests.delete(cacheKey);
     }
 };
 
 export const prefetchTTS = async (text: string, _voicePresetId?: string) => {
-    // Prefetch disabled since caching is removed
+    const cleaned = cleanText(text);
+    const cacheKey = `openai-${FIXED_VOICE}-${cleaned}`;
+    if (ttsCache.has(cacheKey)) return;
+    await speakText(text);
 };
 

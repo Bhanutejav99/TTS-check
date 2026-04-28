@@ -1,3 +1,6 @@
+const ttsCache = new Map<string, string>();
+const pendingRequests = new Map<string, Promise<string | null>>();
+
 // Google Cloud TTS config - Chirp HD is the most natural generative generation
 const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
 const DEFAULT_LANG = 'en-IN';
@@ -11,56 +14,77 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
     if (!cleanText) return null;
 
     const targetVoice = voiceName || DEFAULT_VOICE;
+    const cacheKey = `google-${targetVoice}-${cleanText}`;
 
-    try {
-        console.log("Google Cloud TTS: Generating speech for:", cleanText.substring(0, 60) + "...");
+    if (ttsCache.has(cacheKey)) {
+        return ttsCache.get(cacheKey)!;
+    }
 
-        // Chirp / Chirp-HD / Chirp3-HD voices do NOT support SSML <lang> tags.
-        // Only use SSML for Neural2 / WaveNet / Standard voices.
-        const supportsSSML = /Neural2|WaveNet|Standard/i.test(targetVoice);
+    if (pendingRequests.has(cacheKey)) {
+        return pendingRequests.get(cacheKey)!;
+    }
 
-        const requestBody: Record<string, any> = {
-            voiceName: targetVoice,
-            languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
-        };
+    const requestPromise = (async () => {
+        try {
+            console.log("Google Cloud TTS: Generating speech for:", cleanText.substring(0, 60) + "...");
 
-        // Apply phonetic English fixes so Google doesn't use Hindi nasal vowels
-        const phoneticText = applyPhoneticFixes(cleanText);
+            const supportsSSML = /Neural2|WaveNet|Standard/i.test(targetVoice);
 
-        if (supportsSSML) {
-            requestBody.ssml = wrapIndianNamesInSSML(phoneticText);
-        } else {
-            requestBody.text = phoneticText;
-        }
+            const requestBody: Record<string, any> = {
+                voiceName: targetVoice,
+                languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
+            };
 
-        const response = await fetch('/api/google-tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+            const phoneticText = applyPhoneticFixes(cleanText);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Google Cloud TTS: Proxy/API error", response.status, errorData);
+            if (supportsSSML) {
+                requestBody.ssml = wrapIndianNamesInSSML(phoneticText);
+            } else {
+                requestBody.text = phoneticText;
+            }
+
+            const response = await fetch('/api/google-tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Google Cloud TTS: Proxy/API error", response.status, errorData);
+                return null;
+            }
+
+            const data = await response.json();
+            const base64Audio = data.audioContent;
+
+            if (base64Audio) {
+                console.log("Google Cloud TTS: Received audio data, length:", base64Audio.length);
+                ttsCache.set(cacheKey, base64Audio);
+                return base64Audio;
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Google Cloud TTS: Error generating speech", error);
             return null;
         }
-
-        const data = await response.json();
-        const base64Audio = data.audioContent;
-
-        if (base64Audio) {
-            console.log("Google Cloud TTS: Received audio data, length:", base64Audio.length);
-            return base64Audio;
-        }
-
-        return null;
-    } catch (error) {
-        console.error("Google Cloud TTS: Error generating speech", error);
-        return null;
+    })();
+    
+    pendingRequests.set(cacheKey, requestPromise);
+    try {
+        return await requestPromise;
+    } finally {
+        pendingRequests.delete(cacheKey);
     }
 };
 
 export const prefetchTTS = async (text: string, voiceName?: string) => {
-    // Prefetch disabled since caching is removed
+    const targetVoice = voiceName || DEFAULT_VOICE;
+    const cacheKey = `google-${targetVoice}-${text}`;
+    if (ttsCache.has(cacheKey)) return;
+    
+    console.log("Google Cloud TTS: Prefetching text:", text.substring(0, 30) + "...");
+    await speakText(text, targetVoice);
 };
 
