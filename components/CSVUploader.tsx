@@ -79,8 +79,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
   const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
-  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid' | 'openai'>('gemini');
-  const [selectedVoiceId, setSelectedVoiceId] = useState('Puck-IN');
+  const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid' | 'openai'>('google');
+  const [selectedVoiceId, setSelectedVoiceId] = useState('en-IN-Chirp-HD-D');
 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
   const [pastedText, setPastedText] = useState('');
