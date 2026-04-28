@@ -20,6 +20,7 @@ const ELEVENLABS_VOICES = [
   { id: 'tQHPlZCaA3Oe1X8BqFIp', name: 'Niladri (Teacher)' },
   { id: 'iP95p4EB9pAt7Rbe8S08', name: 'Aditi (Teacher)' },
   { id: 'Lcf7u9PaRE9v6QXbeD0v', name: 'Priya (Professional)' },
+  { id: 'jDPeeRhBWSOxY1qz64cz', name: 'Yasmin' },
   { id: 'pNInz6obbfDQGcgMyIGC', name: 'Adam (Narrator)' },
   { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni (Dynamic)' },
   { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella (Calm)' },
