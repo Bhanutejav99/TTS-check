@@ -7,7 +7,6 @@
  */
 
 const PHONETIC_MAP: Record<string, string> = {
-const PHONETIC_MAP: Record<string, string> = {
     // --- MUGHAL & ISLAMIC HISTORY ---
     // Nasalized 'n' fixes
     "Humayun": "Huma-yunn",
