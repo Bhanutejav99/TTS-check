@@ -75,9 +75,9 @@ const PreviewInterface: React.FC<PreviewInterfaceProps> = ({ questions, config, 
         />
       </div>
 
-      <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden">
-        <div className={`flex-grow flex flex-col items-center justify-center transition-all w-full relative bg-black`}>
-          <div className={`relative z-10 flex flex-col w-full h-full max-h-screen ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full'}`}>
+      <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden min-h-0">
+        <div className={`flex-grow flex flex-col items-center justify-center transition-all w-full relative bg-black min-h-0`}>
+          <div className={`relative z-10 flex flex-col w-full h-full max-h-full ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full mx-auto'}`}>
             <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative overflow-hidden ${isVertical ? 'rounded-none sm:rounded-[2rem] sm:my-2 shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}>
               
               <div className={`flex flex-col h-full relative z-10 ${isVertical ? 'px-4 py-8' : 'px-6 py-8 lg:px-16 lg:py-10'}`}>

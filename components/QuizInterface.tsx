@@ -411,15 +411,15 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       </div>
 
       {/* Main Container */}
-      <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden">
+      <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden min-h-0">
 
         {/* THE ARENA */}
-        <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 w-full relative bg-black`}>
+        <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 w-full relative bg-black min-h-0`}>
 
           {/* STABLE WRAPPER - DYNAMIC DIMENSIONS */}
           <div
             ref={cardRef}
-            className={`relative z-10 flex flex-col w-full h-full max-h-screen ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full'}`}
+            className={`relative z-10 flex flex-col w-full h-full max-h-full ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full mx-auto'}`}
           >
             {/* INNER ANIMATING CARD  */}
             <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden ${isVertical ? 'rounded-none sm:rounded-[2rem] sm:my-2 shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}
