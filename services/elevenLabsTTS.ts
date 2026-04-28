@@ -1,9 +1,8 @@
-
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
-// ElevenLabs config — Niladri Mahapatra, Eleven v3, stability ~75%
-const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri Mahapatra - Informative Teacher
+// ElevenLabs config — Niladri Mahapatra, Eleven v3 is required to maintain the native Indian accent
+const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri (Indian Male Teacher) - Setting back as default
 const MODEL_ID = 'eleven_v3';
 const STABILITY = 1.0;        // eleven_v3 only accepts: 0.0 (Creative), 0.5 (Natural), 1.0 (Robust)
 const SIMILARITY_BOOST = 0.5;
@@ -18,62 +17,64 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 };
 
 export const speakText = async (text: string, overrideVoiceId?: string): Promise<string | null> => {
+    // Aggressive text normalization to prevent duplicate requests due to extra spaces or minor differences
+    const normalizedText = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!normalizedText) return null;
+
     const targetVoiceId = overrideVoiceId || VOICE_ID;
-    const cacheKey = `${targetVoiceId}-${text}`;
+    const cacheKey = `elevenlabs-${targetVoiceId}-${normalizedText}`;
     
     if (ttsCache.has(cacheKey)) {
-        console.log("ElevenLabs TTS: Cache hit for text");
         return ttsCache.get(cacheKey)!;
     }
 
     if (pendingRequests.has(cacheKey)) {
-        console.log("ElevenLabs TTS: Awaiting existing pending request for text");
         return pendingRequests.get(cacheKey)!;
     }
 
     const requestPromise = (async () => {
         try {
-        const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-        console.log("ElevenLabs TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
-        if (!apiKey) {
-            console.error("ElevenLabs TTS: VITE_ELEVENLABS_API_KEY missing from environment. Make sure it's set in Vercel and redeploy.");
-            return null;
-        }
+            const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+            console.log("ElevenLabs TTS: API key present:", !!apiKey, "| key length:", apiKey?.length || 0);
+            if (!apiKey) {
+                console.error("ElevenLabs TTS: VITE_ELEVENLABS_API_KEY missing from environment. Make sure it's set in Vercel and redeploy.");
+                return null;
+            }
 
-        console.log("ElevenLabs TTS: Generating speech for:", text.substring(0, 60) + "...");
-        console.log("ElevenLabs TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
+            console.log("ElevenLabs TTS: Generating speech for:", text.substring(0, 60) + "...");
+            console.log("ElevenLabs TTS: Using voice:", targetVoiceId, "| model:", MODEL_ID);
 
-        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${targetVoiceId}?output_format=mp3_44100_128`, {
-            method: 'POST',
-            headers: {
-                'xi-api-key': apiKey,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                text,
-                model_id: MODEL_ID,
-                voice_settings: {
-                    stability: STABILITY,
-                    similarity_boost: SIMILARITY_BOOST,
+            const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${targetVoiceId}?output_format=mp3_44100_128`, {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': apiKey,
+                    'Content-Type': 'application/json',
                 },
-            }),
-        });
+                body: JSON.stringify({
+                    text: normalizedText,
+                    model_id: MODEL_ID,
+                    voice_settings: {
+                        stability: STABILITY,
+                        similarity_boost: SIMILARITY_BOOST,
+                    },
+                }),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("ElevenLabs TTS: API error", response.status, errorText);
-            return null;
-        }
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("ElevenLabs TTS: API error", response.status, errorText);
+                return null;
+            }
 
-        const audioBuffer = await response.arrayBuffer();
-        const base64Audio = arrayBufferToBase64(audioBuffer);
+            const audioBuffer = await response.arrayBuffer();
+            const base64Audio = arrayBufferToBase64(audioBuffer);
 
-        if (base64Audio) {
-            console.log("ElevenLabs TTS: Received audio data, length:", base64Audio.length);
-            ttsCache.set(cacheKey, base64Audio);
-        }
+            if (base64Audio) {
+                console.log("ElevenLabs TTS: Received audio data, length:", base64Audio.length);
+                ttsCache.set(cacheKey, base64Audio);
+            }
 
-        return base64Audio || null;
+            return base64Audio || null;
         } catch (error) {
             console.error("ElevenLabs TTS: Error generating speech", error);
             return null;
@@ -88,9 +89,10 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
 
 export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {
     const targetVoiceId = overrideVoiceId || VOICE_ID;
-    const cacheKey = `${targetVoiceId}-${text}`;
+    const cacheKey = `elevenlabs-${targetVoiceId}-${text}`;
     if (ttsCache.has(cacheKey)) return;
     
     console.log("ElevenLabs TTS: Prefetching text:", text.substring(0, 30) + "...");
     await speakText(text, overrideVoiceId);
 };
+

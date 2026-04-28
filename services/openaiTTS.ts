@@ -1,4 +1,3 @@
-
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
@@ -36,7 +35,6 @@ export const speakText = async (text: string, _voicePresetId?: string): Promise<
     const cacheKey = `openai-${FIXED_VOICE}-${cleaned}`;
 
     if (ttsCache.has(cacheKey)) {
-        console.log("OpenAI TTS: Cache hit");
         return ttsCache.get(cacheKey)!;
     }
 
@@ -99,3 +97,4 @@ export const prefetchTTS = async (text: string, _voicePresetId?: string) => {
     if (ttsCache.has(cacheKey)) return;
     await speakText(text);
 };
+

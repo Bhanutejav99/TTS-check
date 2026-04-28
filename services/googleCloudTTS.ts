@@ -1,4 +1,3 @@
-
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 
@@ -6,10 +5,17 @@ const pendingRequests = new Map<string, Promise<string | null>>();
 const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
 const DEFAULT_LANG = 'en-IN';
 
+import { wrapIndianNamesInSSML } from '../utils/indianNameSSML.ts';
+import { applyPhoneticFixes } from '../utils/phoneticFixes.ts';
+
 export const speakText = async (text: string, voiceName?: string): Promise<string | null> => {
+    // Strip HTML and normalize whitespace for consistent cache keys
+    const cleanText = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!cleanText) return null;
+
     const targetVoice = voiceName || DEFAULT_VOICE;
-    const cacheKey = `${targetVoice}-${text}`;
-    
+    const cacheKey = `google-${targetVoice}-${cleanText}`;
+
     if (ttsCache.has(cacheKey)) {
         return ttsCache.get(cacheKey)!;
     }
@@ -20,16 +26,27 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
 
     const requestPromise = (async () => {
         try {
-            console.log("Google Cloud TTS: Generating speech for:", text.substring(0, 60) + "...");
-            
+            console.log("Google Cloud TTS: Generating speech for:", cleanText.substring(0, 60) + "...");
+
+            const supportsSSML = /Neural2|WaveNet|Standard/i.test(targetVoice);
+
+            const requestBody: Record<string, any> = {
+                voiceName: targetVoice,
+                languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
+            };
+
+            const phoneticText = applyPhoneticFixes(cleanText);
+
+            if (supportsSSML) {
+                requestBody.ssml = wrapIndianNamesInSSML(phoneticText);
+            } else {
+                requestBody.text = phoneticText;
+            }
+
             const response = await fetch('/api/google-tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: text.replace(/<[^>]+>/g, '').trim(),
-                    voiceName: targetVoice,
-                    languageCode: targetVoice.split('-').slice(0, 2).join('-') // e.g. en-IN
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -64,9 +81,10 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
 
 export const prefetchTTS = async (text: string, voiceName?: string) => {
     const targetVoice = voiceName || DEFAULT_VOICE;
-    const cacheKey = `${targetVoice}-${text}`;
+    const cacheKey = `google-${targetVoice}-${text}`;
     if (ttsCache.has(cacheKey)) return;
     
     console.log("Google Cloud TTS: Prefetching text:", text.substring(0, 30) + "...");
     await speakText(text, targetVoice);
 };
+

@@ -26,23 +26,43 @@ export default async function handler(req: Request) {
   try {
     const body = await req.json();
     
+    // Build the input — use SSML if the client sends it, otherwise plain text
+    const inputPayload = body.ssml
+      ? { ssml: body.ssml }
+      : { text: body.text };
+
     // Standard Google Cloud TTS synthesis request
+    // Chirp / Chirp-HD / Chirp3-HD voices reject custom pitch, speakingRate, and effectsProfileId.
+    // Only apply Indian accent tuning to Neural2 / WaveNet / Standard voices.
+    const voiceName = body.voiceName || 'en-IN-Neural2-D';
+    const isChirp = /Chirp/i.test(voiceName);
+    
+    // Build audioConfig based on voice capability
+    const audioConfig: Record<string, any> = { audioEncoding: 'MP3' };
+    
+    const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
+    
+    // Slow down the pace for Indian voices (Chirp models now support speakingRate)
+    audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.8 : 1.0);
+    
+    if (!isChirp) {
+      // Neural2/WaveNet/Standard support pitch and effects profiles
+      audioConfig.pitch = body.pitch ?? (isIndianVoice ? -1.0 : 0);
+      audioConfig.effectsProfileId = ['large-home-entertainment-class-device'];
+    }
+
     const googleResponse = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: { text: body.text },
+        input: inputPayload,
         voice: { 
           languageCode: body.languageCode || 'en-IN', 
-          name: body.voiceName || 'en-IN-Neural2-D' 
+          name: voiceName
         },
-        audioConfig: { 
-          audioEncoding: 'MP3',
-          pitch: 0,
-          speakingRate: 1.0
-        }
+        audioConfig
       }),
     });
 

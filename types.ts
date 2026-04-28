@@ -9,6 +9,13 @@ export interface Question {
   correctAnswer: 'A' | 'B' | 'C' | 'D';
   imageUrl?: string;
   timeLimit?: number; // In seconds
+  
+  // Optional pre-processed phonetic spellings for TTS
+  audioQuestion?: string;
+  audioOptionA?: string;
+  audioOptionB?: string;
+  audioOptionC?: string;
+  audioOptionD?: string;
 }
 
 export interface UserAnswer {
