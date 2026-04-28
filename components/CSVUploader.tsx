@@ -61,7 +61,8 @@ const OPENAI_VOICES = [
 
 const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded, onPreview }) => {
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'paste' | 'pdf'>('upload');
+  const [isExtracting, setIsExtracting] = useState(false);
 
   // Config State
   const [isAutomatic, setIsAutomatic] = useState(false);
@@ -88,6 +89,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded, onPreview 
   const [loadedQuestions, setLoadedQuestions] = useState<Question[] | null>(null);
   const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const processCSVText = async (text: string) => {
     try {
@@ -149,10 +151,65 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded, onPreview 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => processCSVText(e.target?.result as string);
-      reader.readAsText(file);
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      processCSVText(text);
+    };
+    reader.onerror = () => setError("Failed to read file");
+    reader.readAsText(file);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const base64Data = event.target?.result as string;
+        const res = await fetch('/api/extract-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileData: base64Data, mimeType: file.type || 'application/pdf' })
+        });
+        
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Failed to extract questions.");
+        }
+        
+        const data = await res.json();
+        if (data.questions && data.questions.length > 0) {
+          setLoadedQuestions(data.questions);
+        } else {
+          throw new Error("No English questions found in the document.");
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Failed to process the document.");
+        setLoadedQuestions(null);
+      } finally {
+        setIsExtracting(false);
+      }
+    };
+    reader.onerror = () => {
+      setError("Failed to read file.");
+      setIsExtracting(false);
+    };
+    reader.readAsDataURL(file);
+    
+    if (pdfInputRef.current) {
+      pdfInputRef.current.value = '';
     }
   };
 
@@ -505,10 +562,39 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded, onPreview 
               <div className="bg-[#1A2333] border border-white/5 rounded-full p-1.5 flex gap-1 shadow-inner">
                 <button onClick={() => setActiveTab('upload')} className={`flex-1 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'upload' ? 'bg-[#0B1A2C] text-white shadow-md border border-white/5' : 'text-white/30 hover:text-white/60'}`}>CSV File</button>
                 <button onClick={() => setActiveTab('paste')} className={`flex-1 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'paste' ? 'bg-[#0B1A2C] text-white shadow-md border border-white/5' : 'text-white/30 hover:text-white/60'}`}>Quick Paste</button>
+                <button onClick={() => setActiveTab('pdf')} className={`flex-1 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'pdf' ? 'bg-indigo-500/20 text-indigo-300 shadow-md border border-indigo-500/30' : 'text-white/30 hover:text-white/60'}`}>AI Parse</button>
               </div>
 
               <div className="relative group flex-grow h-[280px]">
-                {activeTab === 'upload' ? (
+                {activeTab === 'pdf' ? (
+                  <div
+                    onClick={() => !isExtracting && pdfInputRef.current?.click()}
+                    className={`w-full h-full flex flex-col items-center justify-center border-2 border-dashed rounded-[2.5rem] transition-all ${isExtracting ? 'cursor-wait border-indigo-500/50 bg-indigo-500/5' : loadedQuestions ? 'cursor-pointer border-emerald-500/50 bg-emerald-500/5' : 'cursor-pointer border-indigo-500/30 hover:border-indigo-400 bg-[#1A2333]/50'}`}
+                  >
+                    {isExtracting ? (
+                      <div className="text-center">
+                        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin mx-auto mb-4 shadow-xl"></div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300">Extracting AI Data...</p>
+                        <p className="text-[8px] text-indigo-300/50 uppercase tracking-widest mt-2 max-w-[200px] mx-auto text-center">Parsing structure and isolating English questions</p>
+                      </div>
+                    ) : loadedQuestions ? (
+                      <div className="text-center">
+                        <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg></div>
+                        <p className="text-lg font-bold text-emerald-400 uppercase tracking-widest">{loadedQuestions.length} Questions</p>
+                        <p className="text-[10px] text-emerald-400/50 uppercase tracking-widest mt-2">Ready for broadcast</p>
+                      </div>
+                    ) : (
+                      <div className="text-center opacity-80 hover:opacity-100 transition-opacity">
+                        <div className="w-12 h-12 bg-indigo-500/20 border border-indigo-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-inner text-indigo-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300">Upload PDF / DOC</p>
+                        <p className="text-[8px] text-white/30 uppercase tracking-widest mt-2 max-w-[200px] mx-auto text-center">Gemini AI will extract English MCQ questions automatically</p>
+                      </div>
+                    )}
+                    <input ref={pdfInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handlePdfChange} className="hidden" />
+                  </div>
+                ) : activeTab === 'upload' ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-full h-full flex flex-col items-center justify-center border-2 border-dashed rounded-[2.5rem] transition-all cursor-pointer ${loadedQuestions ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 hover:border-white/30 bg-[#1A2333]/50'}`}
