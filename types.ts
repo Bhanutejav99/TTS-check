@@ -20,6 +20,7 @@ export interface UserAnswer {
 
 export enum AppPhase {
   UPLOAD = 'UPLOAD',
+  PREVIEW = 'PREVIEW',
   QUIZ = 'QUIZ',
   RESULT = 'RESULT'
 }

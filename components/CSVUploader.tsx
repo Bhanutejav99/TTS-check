@@ -6,6 +6,7 @@ import { SoundEngine } from '../utils/SoundEngine.ts';
 
 interface CSVUploaderProps {
   onQuestionsLoaded: (questions: Question[], config: QuizConfig) => void;
+  onPreview: (questions: Question[], config: QuizConfig) => void;
 }
 
 export const QUIZ_THEMES: ThemeOption[] = [
@@ -52,7 +53,7 @@ const OPENAI_VOICES = [
   { id: 'alloy-mcq', name: 'Alloy — Indian MCQ Reader (Fixed)' },
 ];
 
-const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
+const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded, onPreview }) => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
 
@@ -456,18 +457,51 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                </div>
             </div>
 
-            {/* GENERATE BUTTON */}
-            <button
-               onClick={handleStartSimulation}
-               disabled={!canStart}
-               className={`w-full py-5 rounded-xl font-black uppercase text-xs tracking-[0.4em] transition-all shadow-xl group flex items-center justify-center gap-3 active:scale-[0.98]
-               ${canStart
-                   ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/10'
-                   : 'bg-white/5 text-white/10 border border-white/5 cursor-not-allowed shadow-none'}`}
-            >
-               <svg className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${canStart ? 'text-white' : 'text-white/10'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-               Generate & Launch Studio
-            </button>
+            {/* ACTION BUTTONS */}
+            <div className="grid grid-cols-2 gap-4">
+               <button
+                  onClick={() => {
+                     if (!testTitle.trim()) { setError("Assessment title is required."); return; }
+                     if (!loadedQuestions) { setError("Data source is required."); return; }
+                     onPreview(loadedQuestions, {
+                       isTimed: true,
+                       isAutomatic,
+                       autoTimeLimit,
+                       title: testTitle,
+                       recordSession,
+                       layoutMode,
+                       theme: QUIZ_THEMES.find(t => t.id === selectedThemeId) || QUIZ_THEMES[0],
+                       enableSound,
+                       enableTTS,
+                       withPicture,
+                       optionsOff,
+                       voiceId: selectedVoiceId,
+                       ttsProvider,
+                       addIntroOutro,
+                       isVertical,
+                       revealImageWithAnswer
+                     });
+                  }}
+                  disabled={!canStart}
+                  className={`w-full py-5 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-[0.98]
+                  ${canStart ? 'bg-white/10 text-white hover:bg-white/20 border border-white/10' : 'bg-white/5 text-white/10 border border-white/5 cursor-not-allowed'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  Preview Cards
+               </button>
+
+               <button
+                  onClick={handleStartSimulation}
+                  disabled={!canStart}
+                  className={`w-full py-5 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl group flex items-center justify-center gap-2 active:scale-[0.98]
+                  ${canStart
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/10'
+                      : 'bg-white/5 text-white/10 border border-white/5 cursor-not-allowed shadow-none'}`}
+               >
+                  <svg className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${canStart ? 'text-white' : 'text-white/10'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                  Generate Engine
+               </button>
+            </div>
 
             {error && (
               <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[9px] font-black text-center uppercase tracking-widest animate-fade-in shadow-sm">
