@@ -3,9 +3,9 @@ const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
 import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
-// ElevenLabs config — Niladri Mahapatra, Eleven v2 (Most stable for multi-lingual)
-const VOICE_ID = 'Lcf7u9PaRE9v6QXbeD0v'; // Priya (Indian Female Professional)
-const MODEL_ID = 'eleven_multilingual_v2';
+// ElevenLabs config — Niladri Mahapatra, Eleven v3 is required to maintain the native Indian accent
+const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri (Indian Male Teacher) - Setting back as default
+const MODEL_ID = 'eleven_v3';
 const STABILITY = 1.0;        // eleven_v3 only accepts: 0.0 (Creative), 0.5 (Natural), 1.0 (Robust)
 const SIMILARITY_BOOST = 0.5;
 
