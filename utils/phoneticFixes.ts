@@ -7,15 +7,55 @@
  */
 
 const PHONETIC_MAP: Record<string, string> = {
+    // Nasalized 'n' fixes (Mughal/Islamic names)
     "Humayun": "Huma-yunn",
     "Jahan": "Ja-hann",
     "Shahjahan": "Shah Ja-hann",
+    
+    // Deen / Uddin fixes
     "Qutbuddin": "Kutub-ud-deen",
+    "Alauddin": "Ala-ud-deen",
+    "Jalaluddin": "Jalal-ud-deen",
+    "Ghiyasuddin": "Ghiyas-ud-deen",
+    "Siraj-ud-Daulah": "Siraj ud-Dowla",
+    "Shuja-ud-Daulah": "Shooja ud-Dowla",
+
+    // Consonant / Vowel corrections
     "Aibak": "Eye-buck",
     "Iltutmish": "Il-toot-mish",
     "Babar": "Baa-bur",
+    "Babur": "Baa-bur",
     "Ghazni": "Ghaz-nee",
-    "Ghori": "Gho-ree"
+    "Ghori": "Gho-ree",
+    "Khilji": "Kill-jee",
+    "Tughlaq": "Toogh-luck",
+    "Lodi": "Lo-dee",
+    "Mughal": "Moo-gull",
+    "Mughals": "Moo-gulls",
+    "Aurangzeb": "Orang-zabe",
+    "Tipu": "Tee-poo",
+    "Rajput": "Raaj-poot",
+    "Rajputs": "Raaj-poots",
+    "Maratha": "Ma-raa-tha",
+    "Awadh": "A-wudh",
+    "Oudh": "A-wudh",
+    "Nawab": "Na-waab",
+
+    // Ancient India fixes
+    "Maurya": "Mow-rya",
+    "Ashoka": "A-sho-ka",
+    "Chanakya": "Cha-nuk-ya",
+    "Vedas": "Vay-dus",
+    "Upanishads": "Oo-pan-ish-uds",
+    "Brahmin": "Braah-min",
+    "Brahman": "Braah-mun",
+    "Kshatriya": "Ksha-tree-ya",
+    "Vaishya": "Vy-shya",
+    "Shudra": "Shoo-dra",
+
+    // Common suffixes
+    "pur": "poor", // e.g. Kanpur -> Kan-poor
+    "abad": "a-baad" // e.g. Allahabad -> Allah-a-baad
 };
 
 export const applyPhoneticFixes = (text: string): string => {
