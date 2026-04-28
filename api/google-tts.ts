@@ -43,7 +43,7 @@ export default async function handler(req: Request) {
     const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
     
     // Slow down the pace for Indian voices (Chirp models now support speakingRate)
-    audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.9 : 1.0);
+    audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.8 : 1.0);
     
     if (!isChirp) {
       // Neural2/WaveNet/Standard support pitch and effects profiles
