@@ -1,5 +1,3 @@
-const ttsCache = new Map<string, string>();
-const pendingRequests = new Map<string, Promise<string | null>>();
 
 // Gemini TTS config
 const VOICE_ID = 'Zephyr'; // Default Gemini voice
@@ -47,21 +45,8 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
     if (!safeText) return null;
 
     const targetVoiceId = overrideVoiceId || VOICE_ID;
-    const cacheKey = `gemini-${targetVoiceId}-${safeText}`;
-    
-    // 1. Memory cache (fastest)
-    if (ttsCache.has(cacheKey)) {
-        console.log("Gemini TTS: Cache hit for text");
-        return ttsCache.get(cacheKey)!;
-    }
 
-    if (pendingRequests.has(cacheKey)) {
-        console.log("Gemini TTS: Awaiting existing pending request for text");
-        return pendingRequests.get(cacheKey)!;
-    }
-
-    const requestPromise = (async () => {
-        try {
+    try {
         console.log("Gemini TTS: Generating speech for:", text.substring(0, 60) + "...");
         console.log("Gemini TTS: Calling proxy /api/tts | model:", MODEL_ID);
         console.log("Gemini TTS: Using voice:", targetVoiceId);
@@ -141,35 +126,19 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
 
         if (base64Audio) {
             console.log("Gemini TTS: Received audio data, length:", base64Audio.length);
-            ttsCache.set(cacheKey, base64Audio);
         } else {
             console.warn("Gemini TTS: No audio data found in response geometry. Full response:", JSON.stringify(data));
         }
 
         return base64Audio || null;
-        } catch (error: any) {
-            console.error("Gemini TTS: Error generating speech", error);
-            if (error.message === "RATE_LIMIT_EXCEEDED") throw error;
-            if (error.message === "AUTH_ERROR") throw error;
-            return null;
-        }
-    })();
-    
-    // Register BEFORE awaiting to prevent duplicate in-flight requests
-    pendingRequests.set(cacheKey, requestPromise);
-    try {
-        const result = await requestPromise;
-        return result;
-    } finally {
-        pendingRequests.delete(cacheKey);
+    } catch (error: any) {
+        console.error("Gemini TTS: Error generating speech", error);
+        if (error.message === "RATE_LIMIT_EXCEEDED") throw error;
+        if (error.message === "AUTH_ERROR") throw error;
+        return null;
     }
 };
 
 export const prefetchTTS = async (text: string, overrideVoiceId?: string) => {
-    const targetVoiceId = overrideVoiceId || VOICE_ID;
-    const cacheKey = `${targetVoiceId}-${text}`;
-    if (ttsCache.has(cacheKey)) return;
-    
-    console.log("Gemini TTS: Prefetching text:", text.substring(0, 30) + "...");
-    await speakText(text, overrideVoiceId);
+    // Prefetch disabled since caching is removed
 };
