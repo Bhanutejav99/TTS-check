@@ -79,6 +79,8 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [addIntroOutro, setAddIntroOutro] = useState(false);
   const [isVertical, setIsVertical] = useState(false);
   const [revealImageWithAnswer, setRevealImageWithAnswer] = useState(false);
+  const [optimizePhonetics, setOptimizePhonetics] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [ttsProvider, setTtsProvider] = useState<'elevenlabs' | 'gemini' | 'google' | 'hybrid' | 'openai'>('google');
   const [selectedVoiceId, setSelectedVoiceId] = useState('en-IN-Chirp-HD-F');
 
@@ -86,7 +88,7 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processCSVText = (text: string) => {
+  const processCSVText = async (text: string) => {
     try {
       // Robust splitting for various line endings
       const lines = text.split(/\r\n|\r|\n/).filter(line => line.trim() !== '');
@@ -114,7 +116,29 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
       }).filter(q => q !== null) as Question[];
 
       if (parsed.length === 0) throw new Error("No valid questions parsed");
-      setLoadedQuestions(parsed);
+      
+      if (optimizePhonetics) {
+          setIsOptimizing(true);
+          try {
+              const res = await fetch('/api/optimize-phonetics', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ questions: parsed })
+              });
+              if (!res.ok) throw new Error("Failed to optimize phonetics");
+              const data = await res.json();
+              setLoadedQuestions(data.questions);
+          } catch (e) {
+              console.error(e);
+              setError("Failed to optimize phonetics. Loaded standard questions instead.");
+              setLoadedQuestions(parsed);
+          } finally {
+              setIsOptimizing(false);
+          }
+      } else {
+          setLoadedQuestions(parsed);
+      }
+      
       setError(null);
     } catch (err) {
       setError("Invalid CSV format. Please ensure standard headers (Question, OptionA, etc.)");
@@ -164,6 +188,15 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
   return (
     <div className="w-full h-full min-h-screen bg-[#0E1521] flex items-center justify-center p-4">
       <div className="w-full max-w-[1200px] bg-[#141C2B] rounded-[2rem] border border-white/5 p-8 md:p-12 shadow-2xl relative overflow-hidden">
+
+        {/* OVERLAY LOADER */}
+        {isOptimizing && (
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 rounded-[2rem] flex flex-col items-center justify-center border border-emerald-500/30">
+             <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+             <p className="text-emerald-400 font-medium tracking-wide">Optimizing Pronunciations with Gemini AI...</p>
+             <p className="text-neutral-500 text-sm mt-2">This usually takes a few seconds.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-12 relative z-10">
 
@@ -442,6 +475,19 @@ const CSVUploader: React.FC<CSVUploaderProps> = ({ onQuestionsLoaded }) => {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Optimize Phonetics Block */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between h-full px-6 py-4 bg-[#1A2333] border border-white/5 rounded-[1.5rem] shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-widest text-white/80">AI Phonetics</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Gemini Optimizer</span>
+                    </div>
+                    <button onClick={() => setOptimizePhonetics(!optimizePhonetics)} className={`w-12 h-6 rounded-full relative transition-colors border shrink-0 ${optimizePhonetics ? 'bg-emerald-500/20 border-emerald-500/40' : 'bg-transparent border-white/20'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${optimizePhonetics ? 'left-6 shadow-[0_0_10px_rgba(16,185,129,0.5)] bg-emerald-400' : 'left-0.5 bg-white/50'}`} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

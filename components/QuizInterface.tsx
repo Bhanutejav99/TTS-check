@@ -97,8 +97,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   useEffect(() => {
     if (enableTTS && isQuizActive && slideType === 'QUESTION' && !isAutoSelectingRef.current) {
       const textToSpeak = optionsOff 
-        ? `${currentQuestion.question}` 
-        : `${currentQuestion.question}. Options are: A, ${currentQuestion.optionA}. B, ${currentQuestion.optionB}. C, ${currentQuestion.optionC}. D, ${currentQuestion.optionD}.`;
+        ? `${currentQuestion.audioQuestion || currentQuestion.question}` 
+        : `${currentQuestion.audioQuestion || currentQuestion.question}. Options are: A, ${currentQuestion.audioOptionA || currentQuestion.optionA}. B, ${currentQuestion.audioOptionB || currentQuestion.optionB}. C, ${currentQuestion.audioOptionC || currentQuestion.optionC}. D, ${currentQuestion.audioOptionD || currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
         const audioData = await speakText(textToSpeak, voiceId, ttsProvider);
@@ -185,7 +185,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
     if (enableTTS && isQuizActive && slideType === 'QUESTION' && selectedOption && !isAutoSelectingRef.current && hasReadAnswerRef.current !== currentIndex) {
       hasReadAnswerRef.current = currentIndex;
       const correctLetter = currentQuestion.correctAnswer;
-      const correctText = currentQuestion[`option${correctLetter}`];
+      // Use the phonetic option if available, otherwise fallback to the visual option
+      const correctText = (currentQuestion as any)[`audioOption${correctLetter}`] || currentQuestion[`option${correctLetter}`];
       const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
 
       const triggerTTS = async () => {
@@ -340,7 +341,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         // 2. Play Audio (Syncs with visual)
         if (enableTTS) {
           const correctLetter = currentQuestion.correctAnswer;
-          const correctText = currentQuestion[`option${correctLetter}`];
+          const correctText = (currentQuestion as any)[`audioOption${correctLetter}`] || currentQuestion[`option${correctLetter}`];
           const textToSpeak = `answer is option ${correctLetter} ${correctText}`;
           speakText(textToSpeak, voiceId, ttsProvider).then(audioData => {
             if (audioData) SoundEngine.playBase64Audio(audioData);
