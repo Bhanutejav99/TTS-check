@@ -1,6 +1,7 @@
 
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
+import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
 // ElevenLabs config — Niladri Mahapatra, Eleven v2 (Most stable for multi-lingual)
 const VOICE_ID = 'Lcf7u9PaRE9v6QXbeD0v'; // Priya (Indian Female Professional)
@@ -18,12 +19,25 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 };
 
 export const speakText = async (text: string, overrideVoiceId?: string): Promise<string | null> => {
+    // Aggressive text normalization to prevent duplicate requests due to extra spaces or minor differences
+    const normalizedText = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!normalizedText) return null;
+
     const targetVoiceId = overrideVoiceId || VOICE_ID;
-    const cacheKey = `${targetVoiceId}-${text}`;
+    const cacheKey = `elevenlabs-${targetVoiceId}-${normalizedText}`;
     
+    // 1. Check in-memory cache first (fastest)
     if (ttsCache.has(cacheKey)) {
-        console.log("ElevenLabs TTS: Cache hit for text");
+        console.log("ElevenLabs TTS: Memory Cache hit");
         return ttsCache.get(cacheKey)!;
+    }
+
+    // 2. Check IndexedDB persistent cache (saves credits across reloads)
+    const persistentAudio = await getCachedAudio(cacheKey);
+    if (persistentAudio) {
+        console.log("ElevenLabs TTS: IndexedDB Cache hit");
+        ttsCache.set(cacheKey, persistentAudio); // repopulate memory cache
+        return persistentAudio;
     }
 
     if (pendingRequests.has(cacheKey)) {
@@ -50,7 +64,7 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                text,
+                text: normalizedText,
                 model_id: MODEL_ID,
                 voice_settings: {
                     stability: STABILITY,
@@ -71,6 +85,7 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         if (base64Audio) {
             console.log("ElevenLabs TTS: Received audio data, length:", base64Audio.length);
             ttsCache.set(cacheKey, base64Audio);
+            await cacheAudio(cacheKey, base64Audio); // Save to disk
         }
 
         return base64Audio || null;

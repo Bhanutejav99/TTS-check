@@ -1,6 +1,7 @@
 
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
+import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
 // ─── Fixed Config ─────────────────────────────────────────────
 // Single stable voice — alloy responds best to accent instructions
@@ -36,8 +37,16 @@ export const speakText = async (text: string, _voicePresetId?: string): Promise<
     const cacheKey = `openai-${FIXED_VOICE}-${cleaned}`;
 
     if (ttsCache.has(cacheKey)) {
-        console.log("OpenAI TTS: Cache hit");
+        console.log("OpenAI TTS: Memory Cache hit");
         return ttsCache.get(cacheKey)!;
+    }
+
+    // 2. Persistent IndexedDB cache
+    const persistentAudio = await getCachedAudio(cacheKey);
+    if (persistentAudio) {
+        console.log("OpenAI TTS: IndexedDB Cache hit");
+        ttsCache.set(cacheKey, persistentAudio);
+        return persistentAudio;
     }
 
     if (pendingRequests.has(cacheKey)) {
@@ -73,6 +82,7 @@ export const speakText = async (text: string, _voicePresetId?: string): Promise<
             if (base64Audio) {
                 console.log("OpenAI TTS: Received audio, length:", base64Audio.length);
                 ttsCache.set(cacheKey, base64Audio);
+                await cacheAudio(cacheKey, base64Audio); // Save to disk
                 return base64Audio;
             }
 
