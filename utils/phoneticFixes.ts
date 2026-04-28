@@ -84,7 +84,7 @@ const PHONETIC_MAP: Record<string, string> = {
     "Babur": "Baabur",
     "Babar": "Baabur",
     "Humayun": "Humayunn",
-    "Akbar": "Ukbur",
+    "Akbar": "Ackbar",
     "Jahangir": "Jahaangeer",
     "Jahan": "Jahann",
     "Shahjahan": "Shahjahann",
