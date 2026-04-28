@@ -40,14 +40,16 @@ export default async function handler(req: Request) {
     // Build audioConfig based on voice capability
     const audioConfig: Record<string, any> = { audioEncoding: 'MP3' };
     
+    const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
+    
+    // Slow down the pace for Indian voices (Chirp models now support speakingRate)
+    audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.9 : 1.0);
+    
     if (!isChirp) {
-      // Neural2/WaveNet/Standard — apply Indian accent tuning
-      const isIndianVoice = (body.languageCode || 'en-IN').startsWith('en-IN');
+      // Neural2/WaveNet/Standard support pitch and effects profiles
       audioConfig.pitch = body.pitch ?? (isIndianVoice ? -1.0 : 0);
-      audioConfig.speakingRate = body.speakingRate ?? (isIndianVoice ? 0.95 : 1.0);
       audioConfig.effectsProfileId = ['large-home-entertainment-class-device'];
     }
-    // Chirp HD: leave audioConfig at just { audioEncoding: 'MP3' } — no tuning
 
     const googleResponse = await fetch(url, {
       method: 'POST',
