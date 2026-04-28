@@ -1,7 +1,6 @@
 
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
-import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
 // ElevenLabs config — Niladri Mahapatra, Eleven v3 is required to maintain the native Indian accent
 const VOICE_ID = 'tQHPlZCaA3Oe1X8BqFIp'; // Niladri (Indian Male Teacher) - Setting back as default
@@ -30,14 +29,6 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
     if (ttsCache.has(cacheKey)) {
         console.log("ElevenLabs TTS: Memory Cache hit");
         return ttsCache.get(cacheKey)!;
-    }
-
-    // 2. Check IndexedDB persistent cache (saves credits across reloads)
-    const persistentAudio = await getCachedAudio(cacheKey);
-    if (persistentAudio) {
-        console.log("ElevenLabs TTS: IndexedDB Cache hit");
-        ttsCache.set(cacheKey, persistentAudio); // repopulate memory cache
-        return persistentAudio;
     }
 
     if (pendingRequests.has(cacheKey)) {
@@ -85,7 +76,6 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         if (base64Audio) {
             console.log("ElevenLabs TTS: Received audio data, length:", base64Audio.length);
             ttsCache.set(cacheKey, base64Audio);
-            await cacheAudio(cacheKey, base64Audio); // Save to disk
         }
 
         return base64Audio || null;

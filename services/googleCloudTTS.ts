@@ -1,7 +1,6 @@
 
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
-import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
 // Google Cloud TTS config - Chirp HD is the most natural generative generation
 const DEFAULT_VOICE = 'en-IN-Chirp-HD-D';
@@ -20,13 +19,6 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
     // 1. Memory cache (fastest)
     if (ttsCache.has(cacheKey)) {
         return ttsCache.get(cacheKey)!;
-    }
-
-    // 2. Persistent IndexedDB cache
-    const persistentAudio = await getCachedAudio(cacheKey);
-    if (persistentAudio) {
-        ttsCache.set(cacheKey, persistentAudio);
-        return persistentAudio;
     }
 
     if (pendingRequests.has(cacheKey)) {
@@ -70,7 +62,6 @@ export const speakText = async (text: string, voiceName?: string): Promise<strin
             if (base64Audio) {
                 console.log("Google Cloud TTS: Received audio data, length:", base64Audio.length);
                 ttsCache.set(cacheKey, base64Audio);
-                await cacheAudio(cacheKey, base64Audio); // Save to disk
                 return base64Audio;
             }
 

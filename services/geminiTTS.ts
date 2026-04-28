@@ -1,6 +1,5 @@
 const ttsCache = new Map<string, string>();
 const pendingRequests = new Map<string, Promise<string | null>>();
-import { getCachedAudio, cacheAudio } from '../utils/indexedDB.ts';
 
 // Gemini TTS config
 const VOICE_ID = 'Zephyr'; // Default Gemini voice
@@ -54,13 +53,6 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
     if (ttsCache.has(cacheKey)) {
         console.log("Gemini TTS: Cache hit for text");
         return ttsCache.get(cacheKey)!;
-    }
-
-    // 2. Persistent IndexedDB cache
-    const persistentAudio = await getCachedAudio(cacheKey);
-    if (persistentAudio) {
-        ttsCache.set(cacheKey, persistentAudio);
-        return persistentAudio;
     }
 
     if (pendingRequests.has(cacheKey)) {
@@ -150,7 +142,6 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
         if (base64Audio) {
             console.log("Gemini TTS: Received audio data, length:", base64Audio.length);
             ttsCache.set(cacheKey, base64Audio);
-            await cacheAudio(cacheKey, base64Audio); // Save to disk
         } else {
             console.warn("Gemini TTS: No audio data found in response geometry. Full response:", JSON.stringify(data));
         }
