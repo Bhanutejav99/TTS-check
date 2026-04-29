@@ -79,7 +79,9 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
             }
 
             // Estimate word count to give model a time anchor
-            const wordCount = safeText.trim().split(/\s+/).length;
+            // Replace common symbols that are spoken as words to improve word count estimation
+            const textForCounting = safeText.replace(/\$/g, ' dollar ').replace(/%/g, ' percent ').replace(/&/g, ' and ');
+            const wordCount = textForCounting.trim().split(/\s+/).length;
             // Target: ~2.0 words/second (120 wpm) — slower, measured quiz-host pace for Gemini
             const estimatedSeconds = Math.max(3, Math.ceil(wordCount / 2.0));
 
@@ -91,7 +93,7 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
 SPEECH RATE & TIMING (CRITICAL):
 - This text has approximately ${wordCount} words. Read it in roughly ${estimatedSeconds} seconds.
 - Speak at a steady, measured pace of about 120 words per minute (2 words per second). This is SLOWER than normal conversation — take your time.
-- Do NOT rush. Do NOT drag. Maintain a consistent, measured pace throughout.
+- You MUST maintain a strictly constant, even, and deliberate pacing from the first word to the last. Do NOT speed up or rush at any point.
 
 STRUCTURE & PAUSES:
 - The text contains a QUESTION followed by OPTIONS (A, B, C, D).

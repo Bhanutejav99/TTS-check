@@ -32,7 +32,9 @@ const getAnswerReadTime = (q: Question, provider: string): number => {
   const wps = getWordsPerSecond(provider);
   const correctText = q[`option${q.correctAnswer}`];
   const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
-  const wordCount = answerPhrase.trim().split(/\s+/).length;
+  // Replace common symbols with placeholder words for accurate word count
+  const textForCounting = answerPhrase.replace(/\$/g, ' dollar ').replace(/%/g, ' percent ').replace(/&/g, ' and ');
+  const wordCount = textForCounting.trim().split(/\s+/).length;
   return Math.max(1, Math.ceil(wordCount / wps)); // pure read time
 };
 
@@ -41,7 +43,10 @@ const calculateDynamicTimer = (q: Question, optionsOff: boolean, provider: strin
   const fullTTSText = optionsOff
     ? `${q.question}`
     : `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
-  const wordCount = fullTTSText.trim().split(/\s+/).length;
+  
+  // Replace common symbols with placeholder words for accurate word count
+  const textForCounting = fullTTSText.replace(/\$/g, ' dollar ').replace(/%/g, ' percent ').replace(/&/g, ' and ');
+  const wordCount = textForCounting.trim().split(/\s+/).length;
   let questionReadTime = Math.ceil(wordCount / wps); // Base pure read time
   
   // Gemini adds explicit pauses that we instruct in the prompt
