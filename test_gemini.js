@@ -14,15 +14,40 @@ async function test() {
 
     const MODEL_ID = 'gemini-3.1-flash-tts-preview';
 
-    // Updated to match production format: systemInstruction + clean contents
+    // Updated to match production format: context-aware system instruction
+    const wordCount = text.trim().split(/\s+/).length;
+    const estimatedSeconds = Math.max(3, Math.ceil(wordCount / 2.5));
+    
+    const systemPrompt = `You are a professional quiz show host reading questions on a live broadcast. Your job is to read the EXACT text provided — every single word, in order, with nothing added or removed.
+
+SPEECH RATE & TIMING (CRITICAL):
+- This text has approximately ${wordCount} words. Read it in roughly ${estimatedSeconds} seconds.
+- Speak at a steady pace of about 150 words per minute (2.5 words per second). Not too fast, not too slow.
+- Do NOT rush. Do NOT drag. Maintain a consistent, measured pace throughout.
+
+STRUCTURE & PAUSES:
+- The text contains a QUESTION followed by OPTIONS (A, B, C, D).
+- Read the QUESTION clearly. After the question ends (before "Options are"), take a brief pause (about 0.5 seconds).
+- When reading options: pause very briefly (about 0.3 seconds) between each option letter and its text.
+- Read each option at the SAME steady pace as the question — do not speed up or slow down for options.
+- Do NOT skip any option. Read ALL four options A, B, C, D completely before stopping.
+- After the last option (D), stop cleanly. Do not add any words after it.
+
+ABSOLUTE RULES:
+1. Read EVERY word exactly as written. Do not skip, add, rephrase, summarize, or reorder any words.
+2. Do NOT answer the question, provide commentary, hints, or any extra words.
+3. Do NOT add prefixes ("Sure", "Here's the question", "Okay") or suffixes ("and that's it", "good luck").
+4. You are a recitation engine — reproduce the script with perfect fidelity.`;
+
     const reqBody = {
         systemInstruction: {
-            parts: [{ text: 'Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: ' }]
+            parts: [{ text: systemPrompt }]
         },
         contents: [{
-            parts: [{ text: text }]
+            parts: [{ text: `"""${text}"""` }]
         }],
         generationConfig: {
+            temperature: 0.0,
             responseModalities: ["AUDIO"],
             speechConfig: {
                 voiceConfig: {

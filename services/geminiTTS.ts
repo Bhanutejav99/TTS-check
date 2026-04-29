@@ -63,11 +63,83 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
             console.log("Gemini TTS: Using voice:", targetVoiceId);
 
             let mappedVoiceId = targetVoiceId;
-            let promptModifier = `Strictly recite this text verbatim. Do not answer it or converse, just speak the text exactly as provided without any prefix or suffix: `;
+
+            // ── Build a context-aware system instruction ──
+            // Detect the type of content being spoken for tailored pacing rules
+            const isQuestionWithOptions = safeText.includes('Options are:');
+            const isAnswerReveal = safeText.toLowerCase().startsWith('answer is option');
+            const isIntroOutro = safeText.toLowerCase().startsWith('welcome to') || safeText.toLowerCase().startsWith('thanks for');
             
+            const accentDirective = targetVoiceId.includes('-IN')
+                ? `Speak with a natural Indian English accent throughout. `
+                : ``;
+
             if (targetVoiceId.includes('-IN')) {
                 mappedVoiceId = targetVoiceId.split('-')[0];
-                promptModifier = `Strictly recite this text verbatim in a natural Indian English accent. Do not answer it, converse, or add any commentary. Just read the text exactly as provided: `;
+            }
+
+            // Estimate word count to give model a time anchor
+            const wordCount = safeText.trim().split(/\s+/).length;
+            // Target: ~2.0 words/second (120 wpm) — slower, measured quiz-host pace for Gemini
+            const estimatedSeconds = Math.max(3, Math.ceil(wordCount / 2.0));
+
+            let promptModifier: string;
+
+            if (isQuestionWithOptions) {
+                promptModifier = `You are a professional quiz show host reading questions on a live broadcast. ${accentDirective}Your job is to read the EXACT text provided — every single word, in order, with nothing added or removed.
+
+SPEECH RATE & TIMING (CRITICAL):
+- This text has approximately ${wordCount} words. Read it in roughly ${estimatedSeconds} seconds.
+- Speak at a steady, measured pace of about 120 words per minute (2 words per second). This is SLOWER than normal conversation — take your time.
+- Do NOT rush. Do NOT drag. Maintain a consistent, measured pace throughout.
+
+STRUCTURE & PAUSES:
+- The text contains a QUESTION followed by OPTIONS (A, B, C, D).
+- Read the QUESTION clearly. After the question ends (before "Options are"), take a brief pause (about 0.5 seconds).
+- When reading options: pause briefly (about 0.4 seconds) between each option letter and its text.
+- Read each option at the SAME steady pace as the question — do not speed up or slow down for options.
+- Do NOT skip any option. Read ALL four options A, B, C, D completely before stopping.
+- After the last option (D), stop cleanly. Do not add any words after it.
+
+ABSOLUTE RULES:
+1. Read EVERY word exactly as written. Do not skip, add, rephrase, summarize, or reorder any words.
+2. Do NOT answer the question, provide commentary, hints, or any extra words.
+3. Do NOT add prefixes ("Sure", "Here's the question", "Okay") or suffixes ("and that's it", "good luck").
+4. You are a recitation engine — reproduce the script with perfect fidelity.`;
+            } else if (isAnswerReveal) {
+                promptModifier = `You are a professional quiz show host revealing the correct answer on a live broadcast. ${accentDirective}Read the EXACT text provided — nothing added, nothing removed.
+
+SPEECH RATE & TIMING:
+- This text has approximately ${wordCount} words. Read it in roughly ${estimatedSeconds} seconds.
+- Speak at a confident, clear pace of about 120 words per minute. Take your time announcing the answer.
+- Read with a slightly confident, revealing tone — you are announcing the correct answer.
+- Do NOT rush. Let each word land clearly.
+
+ABSOLUTE RULES:
+1. Read EVERY word exactly as written. Do not add, skip, or change any words.
+2. Do NOT add commentary like "correct!", "that's right!", or any celebration.
+3. Do NOT repeat the answer or add any extra words before or after.
+4. Just read the provided text and stop.`;
+            } else if (isIntroOutro) {
+                promptModifier = `You are a warm, professional quiz show host. ${accentDirective}Read the EXACT text provided — nothing added, nothing removed.
+
+SPEECH RATE & TIMING:
+- Speak at a warm, inviting pace of about 110 words per minute — slower and more welcoming than normal.
+- Let the words breathe. This is the opening or closing of a show.
+
+ABSOLUTE RULES:
+1. Read EVERY word exactly as written. Do not add greetings, commentary, or filler.
+2. Just read the provided text and stop.`;
+            } else {
+                // Generic fallback for any other text
+                promptModifier = `You are a text-to-speech recitation engine. ${accentDirective}Your ONLY function is to read aloud the exact text provided.
+
+SPEECH RATE: Speak at a steady, measured pace of about 120 words per minute (2 words per second). This text has approximately ${wordCount} words — read it in roughly ${estimatedSeconds} seconds.
+
+ABSOLUTE RULES:
+1. Read EVERY word exactly as written. Do not skip, add, rephrase, or reorder any words.
+2. Do NOT answer questions, provide commentary, greetings, or any extra words whatsoever.
+3. Do NOT add prefixes or suffixes. Just read the text and stop.`;
             }
 
             const requestBody = JSON.stringify({
@@ -75,9 +147,10 @@ export const speakText = async (text: string, overrideVoiceId?: string): Promise
                     parts: [{ text: promptModifier }]
                 },
                 contents: [{
-                    parts: [{ text: safeText }]
+                    parts: [{ text: `"""${safeText}"""` }]
                 }],
                 generationConfig: {
+                    temperature: 0.0,
                     responseModalities: ["AUDIO"],
                     speechConfig: {
                         voiceConfig: {

@@ -16,26 +16,34 @@ interface QuizInterfaceProps {
 }
 
 // Estimate timer duration based on question + options word count and TTS speaking rate
-const TTS_WORDS_PER_SECOND = 2.0;
-const THINKING_GAP = 2;       // seconds of silence between question readout and answer
-const ANSWER_LINGER = 1;      // seconds to stay on screen after reading out the answer
+// Provider-specific speech rates:
+//   Gemini TTS: ~120 WPM (2.0 wps) — generative model speaks slower, needs more time
+//   Other TTS:  ~150 WPM (2.5 wps) — standard synthesis engines are faster
+const getWordsPerSecond = (provider: string): number => {
+  if (provider === 'gemini' || provider === 'hybrid') return 2.0;
+  return 2.5;
+};
+const THINKING_GAP = 3;       // seconds of silence between question readout and answer reveal
+const ANSWER_LINGER = 2;      // seconds to stay on screen after reading out the answer
 const MIN_TIMER = 10;         // minimum timer in seconds
 
 // Calculate how long the answer phrase will take to speak
-const getAnswerReadTime = (q: Question): number => {
+const getAnswerReadTime = (q: Question, provider: string): number => {
+  const wps = getWordsPerSecond(provider);
   const correctText = q[`option${q.correctAnswer}`];
   const answerPhrase = `answer is option ${q.correctAnswer} ${correctText}`;
   const wordCount = answerPhrase.trim().split(/\s+/).length;
-  return Math.max(1, Math.ceil(wordCount / TTS_WORDS_PER_SECOND)); // pure read time
+  return Math.max(1, Math.ceil(wordCount / wps)); // pure read time
 };
 
-const calculateDynamicTimer = (q: Question, optionsOff: boolean): number => {
-  const fullTTSText = optionsOff 
-    ? `${q.question}` 
+const calculateDynamicTimer = (q: Question, optionsOff: boolean, provider: string): number => {
+  const wps = getWordsPerSecond(provider);
+  const fullTTSText = optionsOff
+    ? `${q.question}`
     : `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
-  const questionReadTime = Math.ceil(wordCount / TTS_WORDS_PER_SECOND); // Force integer
-  const answerReadTime = getAnswerReadTime(q);
+  const questionReadTime = Math.ceil(wordCount / wps); // Force integer
+  const answerReadTime = getAnswerReadTime(q, provider);
   const total = questionReadTime + THINKING_GAP + answerReadTime + ANSWER_LINGER;
   return Math.max(MIN_TIMER, total);
 };
@@ -96,8 +104,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   // TTS Question Effect
   useEffect(() => {
     if (enableTTS && isQuizActive && slideType === 'QUESTION' && !isAutoSelectingRef.current) {
-      const textToSpeak = optionsOff 
-        ? `${currentQuestion.audioQuestion || currentQuestion.question}` 
+      const textToSpeak = optionsOff
+        ? `${currentQuestion.audioQuestion || currentQuestion.question}`
         : `${currentQuestion.audioQuestion || currentQuestion.question}. Options are: A, ${currentQuestion.audioOptionA || currentQuestion.optionA}. B, ${currentQuestion.audioOptionB || currentQuestion.optionB}. C, ${currentQuestion.audioOptionC || currentQuestion.optionC}. D, ${currentQuestion.audioOptionD || currentQuestion.optionD}.`;
 
       const triggerTTS = async () => {
@@ -111,8 +119,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           if (nextIndex < questions.length) {
             const nextQ = questions[nextIndex];
             const nextText = optionsOff
-              ? `${nextQ.question}`
-              : `${nextQ.question}. Options are: A, ${nextQ.optionA}. B, ${nextQ.optionB}. C, ${nextQ.optionC}. D, ${nextQ.optionD}.`;
+              ? `${(nextQ as any).audioQuestion || nextQ.question}`
+              : `${(nextQ as any).audioQuestion || nextQ.question}. Options are: A, ${(nextQ as any).audioOptionA || nextQ.optionA}. B, ${(nextQ as any).audioOptionB || nextQ.optionB}. C, ${(nextQ as any).audioOptionC || nextQ.optionC}. D, ${(nextQ as any).audioOptionD || nextQ.optionD}.`;
             // Fire and forget — don't await, let it cache silently
             prefetchTTS(nextText, voiceId, ttsProvider);
           }
@@ -120,7 +128,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
         // Prefetch the answer for this question (pre-loads for reveal)
         const correctLetter = currentQuestion.correctAnswer;
-        const correctText = currentQuestion[`option${correctLetter}`];
+        const correctText = (currentQuestion as any)[`audioOption${correctLetter}`] || currentQuestion[`option${correctLetter}`];
         const answerText = `answer is option ${correctLetter} ${correctText}`;
         prefetchTTS(answerText, voiceId, ttsProvider);
       };
@@ -141,21 +149,21 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
         if (enableTTS) {
           const introAudioData = await speakText(`Welcome to ${testTitle}`, voiceId, ttsProvider);
           if (introAudioData) SoundEngine.playBase64Audio(introAudioData);
-          
+
           // Prefetch Q1 (Wait, we will already do this in handleStart now, so just ensure it's not duplicating sequentially)
           const firstQ = questions[0];
           const questionText = optionsOff ? `${firstQ.question}` : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-          if (ttsProvider !== 'gemini') { 
-              // For Gemini, it's already fired in parallel at handleStart
-              prefetchTTS(questionText, voiceId, ttsProvider);
+          if (ttsProvider !== 'gemini') {
+            // For Gemini, it's already fired in parallel at handleStart
+            prefetchTTS(questionText, voiceId, ttsProvider);
           }
         }
-        
+
         const words = testTitle.split(/\s+/).length;
         const durationMs = Math.max(3000, words * 400 + 1500); // Standard dynamic wait based on title length
-        
+
         setTimeout(() => {
-           setSlideType('QUESTION');
+          setSlideType('QUESTION');
         }, durationMs);
       };
       runIntro();
@@ -166,14 +174,14 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   useEffect(() => {
     if (isQuizActive && slideType === 'OUTRO') {
       const runOutro = async () => {
-        const outroText = "Thanks for playing! How many did you get right? Let us know in the comments!";
+        const outroText = "Thanks for Watching! How many did you get right? Let us know in the comments!";
         if (enableTTS) {
           const outroAudioData = await speakText(outroText, voiceId, ttsProvider);
           if (outroAudioData) SoundEngine.playBase64Audio(outroAudioData);
         }
         setTimeout(() => {
-           onFinish(prepareFinalAnswers());
-        }, 5000); 
+          onFinish(prepareFinalAnswers());
+        }, 5000);
       };
       runOutro();
     }
@@ -214,9 +222,9 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       setCurrentIndex(prev => prev + 1);
     } else {
       if (addIntroOutro && slideType !== 'OUTRO') {
-         setSlideType('OUTRO');
+        setSlideType('OUTRO');
       } else {
-         onFinish(prepareFinalAnswers());
+        onFinish(prepareFinalAnswers());
       }
     }
   }, [currentIndex, questions.length, onFinish, prepareFinalAnswers, addIntroOutro, slideType]);
@@ -237,25 +245,25 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
     // Eagerly prefetch first slide TTS
     let firstTTSPromise: Promise<any> | null = null;
-    
-    if (enableTTS) {
-       const firstQ = questions[0];
-       const questionText = optionsOff 
-         ? `${firstQ.question}` 
-         : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
-       const correctLetter = firstQ.correctAnswer;
-       const correctText = firstQ[`option${correctLetter}`];
-       const answerText = `answer is option ${correctLetter} ${correctText}`;
 
-       if (addIntroOutro) {
-          // Sequential: intro first, then Q1 gets prefetched during intro playback
-          firstTTSPromise = prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
-       } else {
-          // Sequential: question first, then answer
-          firstTTSPromise = prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
-            return prefetchTTS(answerText, voiceId, ttsProvider);
-          });
-       }
+    if (enableTTS) {
+      const firstQ = questions[0];
+      const questionText = optionsOff
+        ? `${firstQ.question}`
+        : `${firstQ.question}. Options are: A, ${firstQ.optionA}. B, ${firstQ.optionB}. C, ${firstQ.optionC}. D, ${firstQ.optionD}.`;
+      const correctLetter = firstQ.correctAnswer;
+      const correctText = firstQ[`option${correctLetter}`];
+      const answerText = `answer is option ${correctLetter} ${correctText}`;
+
+      if (addIntroOutro) {
+        // Sequential: intro first, then Q1 gets prefetched during intro playback
+        firstTTSPromise = prefetchTTS(`Welcome to ${testTitle}`, voiceId, ttsProvider);
+      } else {
+        // Sequential: question first, then answer
+        firstTTSPromise = prefetchTTS(questionText, voiceId, ttsProvider).then(() => {
+          return prefetchTTS(answerText, voiceId, ttsProvider);
+        });
+      }
     }
 
     if (recordSession) {
@@ -295,7 +303,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
       setIsInitializing(true);
       if (firstTTSPromise) await firstTTSPromise;
       setIsInitializing(false);
-      
+
       setHasStarted(true);
       setIsQuizActive(true);
     }
@@ -327,8 +335,8 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
     if (isAutomatic) {
       // Trigger SYNCHRONIZED Answer Readout and Visual Reveal
-      const answerReadTime = getAnswerReadTime(currentQuestion);
-      const revealTime = answerReadTime + ANSWER_LINGER; // e.g. 1s read + 2s linger = 3s remaining
+      const answerReadTime = getAnswerReadTime(currentQuestion, ttsProvider);
+      const revealTime = answerReadTime + ANSWER_LINGER; // e.g. 2s read + 2s linger = 4s remaining
 
       if (remainingTime <= revealTime && hasReadAnswerRef.current !== currentIndex) {
         hasReadAnswerRef.current = currentIndex;
@@ -352,7 +360,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   };
 
   const timerDuration = (enableTTS && isAutomatic)
-    ? calculateDynamicTimer(currentQuestion, optionsOff)
+    ? calculateDynamicTimer(currentQuestion, optionsOff, ttsProvider)
     : isAutomatic
       ? (autoTimeLimit - 3)
       : (currentQuestion.timeLimit || 20);
@@ -400,31 +408,25 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
   };
 
   return (
-    <div className="flex-grow flex flex-col relative overflow-hidden bg-[var(--theme-bg)] h-screen" style={themeStyles}>
+    <div className="relative overflow-hidden bg-black w-screen h-screen flex items-center justify-center" style={themeStyles}>
 
-      {/* Precision Progress Bar */}
-      <div className="h-2 w-full bg-white/10 sticky top-0 z-[100]">
-        <div
-          className="h-full transition-all duration-1000 cubic-bezier(0.16, 1, 0.3, 1)"
-          style={{ width: `${progressPercent}%`, backgroundColor: theme.accent, boxShadow: `0 0 15px ${theme.accent}60` }}
-        />
-      </div>
-
-      {/* Main Container */}
-      <div className="flex-grow flex flex-col w-full h-full relative z-10 overflow-hidden min-h-0">
-
-        {/* THE ARENA */}
-        <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 w-full relative bg-black min-h-0`}>
-
-          {/* STABLE WRAPPER - DYNAMIC DIMENSIONS */}
+      {/* STRICT 16:9 CARD — fills viewport width, height derived from aspect ratio */}
+      <div
+        ref={cardRef}
+        className={`relative z-10 flex flex-col overflow-hidden ${isVertical ? 'aspect-[9/16] h-full max-w-[calc(100vh*9/16)]' : 'aspect-video w-full max-h-screen'}`}
+      >
+        {/* Precision Progress Bar — INSIDE the 16:9 card */}
+        <div className="h-2 w-full bg-white/10 shrink-0 z-[100]">
           <div
-            ref={cardRef}
-            className={`relative z-10 flex flex-col w-full h-full max-h-full ${isVertical ? 'aspect-[9/16] max-w-[calc(100vh*9/16)] self-center' : 'aspect-video max-w-full mx-auto'}`}
-          >
-            {/* INNER ANIMATING CARD  */}
-            <div className={`w-full h-full bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden ${isVertical ? 'rounded-none sm:rounded-[2rem] sm:my-2 shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}
-                 ${!hasStarted ? 'opacity-80 scale-95' : 'opacity-100 scale-100'}`}
-            >
+            className="h-full transition-all duration-1000 cubic-bezier(0.16, 1, 0.3, 1)"
+            style={{ width: `${progressPercent}%`, backgroundColor: theme.accent, boxShadow: `0 0 15px ${theme.accent}60` }}
+          />
+        </div>
+
+        {/* INNER ANIMATING CARD  */}
+        <div className={`w-full flex-grow bg-[var(--theme-bg)] flex flex-col relative transition-all duration-700 overflow-hidden min-h-0
+             ${!hasStarted ? 'opacity-80 scale-95' : 'opacity-100 scale-100'}`}
+        >
 
               {!hasStarted && (
                 <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-3xl flex items-center justify-center p-8">
@@ -452,37 +454,37 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
               )}
 
               {/* Internal Content */}
-              <div className={`flex flex-col h-full relative z-10 ${isVertical ? 'px-4 py-8' : 'px-6 py-8 lg:px-16 lg:py-10'}`}>
-              
+              <div className={`flex flex-col flex-grow relative z-10 min-h-0 ${isVertical ? 'px-4 py-8' : 'px-6 py-6 lg:px-16 lg:py-8'}`}>
+
                 {slideType === 'INTRO' && (
                   <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-700 w-full px-12`}>
-                      <h2 className="text-6xl lg:text-8xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl animate-in zoom-in duration-700">
-                         {testTitle}
-                      </h2>
-                      <div className="w-24 h-1 bg-white/20 mt-12 rounded-full overflow-hidden">
-                         <div className="w-full h-full bg-white/80 animate-[shimmer_2s_infinite]"></div>
-                      </div>
+                    <h2 className="text-6xl lg:text-8xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl animate-in zoom-in duration-700">
+                      {testTitle}
+                    </h2>
+                    <div className="w-24 h-1 bg-white/20 mt-12 rounded-full overflow-hidden">
+                      <div className="w-full h-full bg-white/80 animate-[shimmer_2s_infinite]"></div>
+                    </div>
                   </div>
                 )}
 
                 {slideType === 'OUTRO' && (
                   <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-700 w-full px-12`}>
-                      <h2 className="text-5xl lg:text-7xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl mb-8 animate-in slide-in-from-bottom-8 duration-700">
-                         Thanks for playing!
-                      </h2>
-                      <p className="text-3xl lg:text-5xl font-bold text-center tracking-wide animate-in fade-in duration-1000 delay-300" style={{ color: theme.accent }}>
-                         How many did you get right? Let us know in the comments!
-                      </p>
+                    <h2 className="text-5xl lg:text-7xl font-black text-white text-center leading-tight tracking-tight drop-shadow-2xl mb-8 animate-in slide-in-from-bottom-8 duration-700">
+                      Thanks for playing!
+                    </h2>
+                    <p className="text-3xl lg:text-5xl font-bold text-center tracking-wide animate-in fade-in duration-1000 delay-300" style={{ color: theme.accent }}>
+                      How many did you get right? Let us know in the comments!
+                    </p>
                   </div>
                 )}
 
                 {slideType === 'QUESTION' && (
                   <>
                     <div className="absolute top-6 left-6 lg:top-10 lg:left-10 z-30 transition-all duration-700 animate-fade-in">
-                      <div 
+                      <div
                         className="px-4 py-2 rounded-2xl font-black text-xs lg:text-sm tracking-[0.2em] uppercase backdrop-blur-lg border"
-                        style={{ 
-                          backgroundColor: `${theme.accent}15`, 
+                        style={{
+                          backgroundColor: `${theme.accent}15`,
                           color: theme.accent,
                           borderColor: `${theme.accent}30`,
                           boxShadow: `0 4px 20px -5px ${theme.accent}40`
@@ -493,10 +495,10 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
                     </div>
 
                     <div className={`flex-grow flex ${withPicture ? (isVertical ? 'flex-col items-center justify-center gap-2 lg:gap-4' : 'flex-row items-center gap-8 lg:gap-12') : 'flex-col justify-center'} min-h-0 ${isVertical ? 'mb-2 lg:mb-4' : 'mb-6 lg:mb-8'} transition-all`}>
-                      
+
                       {/* Image Block MUST move before Text if vertical */}
                       {withPicture && isVertical && (
-                         <div className={`relative shrink-0 w-[85%] max-w-[20rem] lg:max-w-[24rem] aspect-[4/3] max-h-[30vh] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
+                        <div className={`relative shrink-0 w-[85%] max-w-[20rem] lg:max-w-[24rem] aspect-[4/3] max-h-[30vh] flex justify-center items-center transition-all duration-700 mx-auto ${currentQuestion.imageUrl ? 'overflow-hidden rounded-[2rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] border-[3px] border-white/20 bg-black/40' : ''}`}>
                           {currentQuestion.imageUrl && (
                             <img src={currentQuestion.imageUrl} alt="Visual Context" className={`w-full h-full object-cover transition-all duration-700 ${config.revealImageWithAnswer && !isAutoSelecting && !selectedOption ? 'opacity-0 scale-90 blur-2xl' : 'opacity-100 scale-100 blur-0 group-hover:scale-105'}`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; e.currentTarget.parentElement!.className = 'hidden'; }} />
                           )}
@@ -604,11 +606,11 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           </div>
         </div>
 
-        {/* BOTTOM CONTROL DECK */}
-        <div className="w-full px-8 py-4 flex items-center justify-between bg-[var(--theme-bg)] border-t border-white/5 z-20 shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        {/* BOTTOM CONTROL DECK — absolute overlay, does NOT affect 16:9 ratio */}
+        <div className="absolute bottom-0 left-0 right-0 w-full px-8 py-3 flex items-center justify-between bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
           {/* Left: Status & Timer */}
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+            <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-black/40 backdrop-blur-md border border-white/5">
               {(isTimed || isAutomatic) && slideType === 'QUESTION' && (
                 <div className="w-12 h-12">
                   <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && (!isAutoSelecting || isAutomatic)} onTick={handleTick} />
@@ -635,13 +637,13 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
-            <button onClick={() => window.confirm("Abort current session?") && onExit()} className="px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white/40 hover:text-rose-400 bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-rose-500/30">
+            <button onClick={() => window.confirm("Abort current session?") && onExit()} className="px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white/40 hover:text-rose-400 bg-black/40 backdrop-blur-md hover:bg-white/10 transition-all border border-transparent hover:border-rose-500/30">
               Abort
             </button>
             <button
               onClick={handleNext}
               disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-              className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest bg-white hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale"
+              className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale backdrop-blur-md"
               style={{ backgroundColor: theme.accent, color: 'white', boxShadow: `0 10px 20px -5px ${theme.accent}60` }}
             >
               <span>Next Slide</span>
