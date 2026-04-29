@@ -42,7 +42,18 @@ const calculateDynamicTimer = (q: Question, optionsOff: boolean, provider: strin
     ? `${q.question}`
     : `${q.question}. Options are: A, ${q.optionA}. B, ${q.optionB}. C, ${q.optionC}. D, ${q.optionD}.`;
   const wordCount = fullTTSText.trim().split(/\s+/).length;
-  const questionReadTime = Math.ceil(wordCount / wps); // Force integer
+  let questionReadTime = Math.ceil(wordCount / wps); // Base pure read time
+  
+  // Gemini adds explicit pauses that we instruct in the prompt
+  if ((provider === 'gemini' || provider === 'hybrid')) {
+    if (!optionsOff) {
+      // 0.5s after question + 0.4s between each option + safety buffer
+      questionReadTime += 3; 
+    } else {
+      questionReadTime += 1;
+    }
+  }
+
   const answerReadTime = getAnswerReadTime(q, provider);
   const total = questionReadTime + THINKING_GAP + answerReadTime + ANSWER_LINGER;
   return Math.max(MIN_TIMER, total);
