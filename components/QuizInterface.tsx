@@ -615,51 +615,53 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ questions, config, onFini
           </div>
         </div>
 
-        {/* BOTTOM CONTROL DECK — absolute overlay, does NOT affect 16:9 ratio */}
-        <div className="absolute bottom-0 left-0 right-0 w-full px-8 py-3 flex items-center justify-between bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
-          {/* Left: Status & Timer */}
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-black/40 backdrop-blur-md border border-white/5">
-              {(isTimed || isAutomatic) && slideType === 'QUESTION' && (
-                <div className="w-12 h-12">
-                  <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && (!isAutoSelecting || isAutomatic)} onTick={handleTick} />
+        {/* BOTTOM CONTROL DECK — hidden during recording so it doesn't appear in video */}
+        {!recordSession && (
+          <div className="absolute bottom-0 left-0 right-0 w-full px-8 py-3 flex items-center justify-between bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
+            {/* Left: Status & Timer */}
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-4 p-3 pr-6 rounded-2xl bg-black/40 backdrop-blur-md border border-white/5">
+                {(isTimed || isAutomatic) && slideType === 'QUESTION' && (
+                  <div className="w-12 h-12">
+                    <CircularTimer key={`timer-${currentIndex}`} duration={timerDuration} onTimeUp={handleTimeUp} isActive={isQuizActive && (!isAutoSelecting || isAutomatic)} onTick={handleTick} />
+                  </div>
+                )}
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Engine Status</p>
+                  <p className="text-lg font-black text-white italic tracking-tight leading-none" style={{ color: isAutoSelecting ? theme.accent : 'white' }}>
+                    {slideType === 'INTRO' ? 'Title Sequence' : slideType === 'OUTRO' ? 'Ending Sequence' : isAutoSelecting ? 'Revealing...' : (isQuizActive ? 'Live Session' : 'Standby')}
+                  </p>
                 </div>
-              )}
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-0.5">Engine Status</p>
-                <p className="text-lg font-black text-white italic tracking-tight leading-none" style={{ color: isAutoSelecting ? theme.accent : 'white' }}>
-                  {slideType === 'INTRO' ? 'Title Sequence' : slideType === 'OUTRO' ? 'Ending Sequence' : isAutoSelecting ? 'Revealing...' : (isQuizActive ? 'Live Session' : 'Standby')}
-                </p>
+              </div>
+
+              <div className="hidden xl:block">
+                <h1 className="text-lg font-black text-white tracking-tighter truncate max-w-[300px]">{testTitle}</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`w-2 h-2 rounded-full ${isQuizActive ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`}></span>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+                    {slideType === 'INTRO' ? 'CINEMATIC INTRO' : slideType === 'OUTRO' ? 'CINEMATIC OUTRO' : `Slide ${currentIndex + 1} / ${questions.length}`}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="hidden xl:block">
-              <h1 className="text-lg font-black text-white tracking-tighter truncate max-w-[300px]">{testTitle}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`w-2 h-2 rounded-full ${isQuizActive ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`}></span>
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-                  {slideType === 'INTRO' ? 'CINEMATIC INTRO' : slideType === 'OUTRO' ? 'CINEMATIC OUTRO' : `Slide ${currentIndex + 1} / ${questions.length}`}
-                </p>
-              </div>
+            {/* Right: Actions */}
+            <div className="flex items-center gap-4">
+              <button onClick={() => window.confirm("Abort current session?") && onExit()} className="px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white/40 hover:text-rose-400 bg-black/40 backdrop-blur-md hover:bg-white/10 transition-all border border-transparent hover:border-rose-500/30">
+                Abort
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={!isQuizActive || isAutomatic || isAutoSelecting}
+                className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale backdrop-blur-md"
+                style={{ backgroundColor: theme.accent, color: 'white', boxShadow: `0 10px 20px -5px ${theme.accent}60` }}
+              >
+                <span>Next Slide</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+              </button>
             </div>
           </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-4">
-            <button onClick={() => window.confirm("Abort current session?") && onExit()} className="px-6 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white/40 hover:text-rose-400 bg-black/40 backdrop-blur-md hover:bg-white/10 transition-all border border-transparent hover:border-rose-500/30">
-              Abort
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={!isQuizActive || isAutomatic || isAutoSelecting}
-              className="px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 disabled:grayscale backdrop-blur-md"
-              style={{ backgroundColor: theme.accent, color: 'white', boxShadow: `0 10px 20px -5px ${theme.accent}60` }}
-            >
-              <span>Next Slide</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-            </button>
-          </div>
-        </div>
+        )}
 
       </div>
     </div>
